@@ -51,13 +51,17 @@ public class WorldGenerator : MonoBehaviour
             {
                 //these are probably a bit better for plains-ish biomes
                 //explanations of values in these lines
-                //argument 1: x+actualChunkX to get the actual in world position of the chunk
+                //argument 1: x+actualChunkX to get the actual x value in world position of the chunk
                 //argument 2: simplex noise method calls this Y, im using this to control how high i want the layers,
                 // 0 to get the highest value, at the very button, 300 to get fairly low values resulting in layers at the bottom of the actual world
                 // 100 to get an average of a 1 layer thick dirt layer, might change this to 20, looks nice, resulting in multiple layers of dirt, or 0
                 // 0 it is, at least for smooth-ish plains
-                int stoneHeightBorder = SimplexNoise((x + actualChunkX), 100, (z + actualChunkZ), 10, 3, 1.2f);
-                stoneHeightBorder += SimplexNoise((x + actualChunkX), 300, (z + actualChunkZ), 20, 2, 0) + 10; // controls "hills"
+                // argument 3: z + actual z to get the actual z value in the world position of the chunk
+                //argument 4: smoothness of the terrain, larger = less noisy
+                //argument 5:max height of hills
+                //argument 6: exponent, usefull for creating larger cliffs without changing too much on arg 4 & 5 (has the exact same effect though
+                int stoneHeightBorder = SimplexNoise((x + actualChunkX), 100, (z + actualChunkZ), 10, 3, 1.2f);//controls "hills" in the stone
+                stoneHeightBorder += SimplexNoise((x + actualChunkX), 300, (z + actualChunkZ), 20, 2, 0) + 10; // controls the main levels of stone
                 int dirtHeightBorder = SimplexNoise((x + actualChunkX), 40, (z + actualChunkZ), 80, 10, 0) + 3;
                 /*
                 quite nice values, look for better alternatives though: 
@@ -82,7 +86,7 @@ public class WorldGenerator : MonoBehaviour
 
                         if (f > 1.9)
                         {
-                            Debug.Log(f);
+                            //Debug.Log(f);
                             objToMake = emeraldOre;
                         }
                         generate = true;
