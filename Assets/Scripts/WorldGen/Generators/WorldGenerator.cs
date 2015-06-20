@@ -13,38 +13,85 @@ public class WorldGenerator : MonoBehaviour
     public GameObject dirt;
     public GameObject emeraldOre;
 
-    public int chunkSize = 16;
-    public int heightLimit = 128;
-    public Vector2 WorldSize = new Vector2(2, 2);
+    public int chunkSize = 4;
+    public int radiusToGenerateAroundPlayer = 4;
 
     private bool generatingChunk = false;
+    private bool generatingWorld = false;
+
+    private GameObject player;
 
     // Use this for initialization
     void Start()
     {
-        StartCoroutine(GenerateChunksOverTime());   
+        player = transform.Find("Player").gameObject;
+        if (!player)
+        {
+            Debug.Log("requires a plyer");
+        }
+    }
+    void Update()
+    {
+        if (player && !generatingChunk && !generatingWorld)
+        {
+            StartCoroutine(GenerateChunksOverTime());
+        }
     }
     IEnumerator GenerateChunksOverTime()
     {
-        for (int x = 0; x < WorldSize.x; x++)
+        generatingWorld = true;
+        Vector3 playerPos = player.transform.position;
+        int playerChunkXPos = (int)(playerPos.x / chunkSize);
+        int playerChunkZPos = (int)(playerPos.z / chunkSize);
+
+
+        for (int x = playerChunkXPos-radiusToGenerateAroundPlayer; x <= playerChunkXPos+radiusToGenerateAroundPlayer; x++)
         {
-            for (int z = 0; z < WorldSize.y; z++)
+            for (int z = playerChunkZPos-radiusToGenerateAroundPlayer; z <= playerChunkZPos+radiusToGenerateAroundPlayer; z++)
             {
                 while (generatingChunk)
                 {
-                    yield return new WaitForSeconds(5f);
+                    //yield return new WaitForSeconds(5f);//wait 5 sec between chunks
+                    yield return new WaitForEndOfFrame(); //only wait till next frame between chunks
                 }
-                GameObject chunk = new GameObject("chunk_x" + x + "_z" + z);
-                chunk.transform.parent = transform;
-                chunk.transform.position = new Vector3(x * chunkSize, 0f, z * chunkSize);
+                if (!transform.Find("chunk_x" + x + "_z" + z))//dont generate the same chunk twice
+                {
+                    GameObject chunk = new GameObject("chunk_x" + x + "_z" + z);
+                    chunk.tag = "Chunk";
+                    chunk.transform.parent = transform;
+                    chunk.transform.position = new Vector3(x * chunkSize, 0f, z * chunkSize);
 
-                int actualChunkX = x * chunkSize;
-                int actualChunkZ = z * chunkSize;
+                    int actualChunkX = x * chunkSize;
+                    int actualChunkZ = z * chunkSize;
 
-                StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, chunk));
+                    StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, chunk));
+                }
             }
         }
-        yield return null;
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            GameObject obj = transform.GetChild(i).gameObject;
+            if (obj.tag == "Chunk")
+            {
+                int x = (int)obj.transform.position.x / chunkSize;
+                int z = (int)obj.transform.position.z / chunkSize;
+                bool breakIt = true;
+
+                if ((x >= playerChunkXPos-radiusToGenerateAroundPlayer && x <= playerChunkXPos+radiusToGenerateAroundPlayer))
+                {
+                    if ((z >= playerChunkZPos-radiusToGenerateAroundPlayer && z <= playerChunkZPos+radiusToGenerateAroundPlayer))
+                    {
+                        breakIt = false;
+                    }
+                }
+
+                if (breakIt)
+                    Destroy(obj);
+                
+            }
+        }
+        yield return new WaitForSeconds(1f); //when the world has been generated around the player wait for a second before attempting to create it again
+        generatingWorld = false;
     }
 
     
@@ -136,9 +183,9 @@ public class WorldGenerator : MonoBehaviour
         int y = stoneHeightBorder+dirtHeightBorder+1;
         int maxPerFrame = 1;
 
-        while (y < heightLimit)
+        while (y > 0)
         {
-            for (int spawned = 0; spawned < maxPerFrame && y < heightLimit; spawned++)
+            for (int spawned = 0; spawned < maxPerFrame && y > 0; spawned++)
             {
                 if (y <= stoneHeightBorder)
                 {
@@ -170,13 +217,20 @@ public class WorldGenerator : MonoBehaviour
                 {
                     objToMake = null;
                     generate = false;
-                    spawned = maxPerFrame;
-                    y = heightLimit;
                 }
                 if (generate)
                 {
-                    GameObject c = (GameObject)Instantiate(objToMake, new Vector3(x, y, z), Quaternion.identity);
-                    c.transform.parent = chunkObject.transform;
+                    if (chunkObject)
+                    {
+                        GameObject c = (GameObject)Instantiate(objToMake, new Vector3(x, y, z), Quaternion.identity);
+                        c.transform.parent = chunkObject.transform;
+                    }
+                    else
+                    {
+                        //parent dissappeared, stop generating more
+                        y = 0;
+                        spawned = maxPerFrame;
+                    }
                 }
                 y--;
             }
