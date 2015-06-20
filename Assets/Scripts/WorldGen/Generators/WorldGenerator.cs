@@ -61,7 +61,7 @@ public class WorldGenerator : MonoBehaviour
     /// of the terrain, might use more cpu power while generating, but will be faster.... ultimately generating columns 
     /// per frame looks coolest, so i'll enable that per default ;)</param>
     /// <returns>nothing of note, IEnumerator's are used for coroutines</returns>
-    IEnumerator CreateChunksOverTime(int actualChunkX, int actualChunkZ, GameObject chunkObject, bool generateColumnsPerFrame = true)
+    IEnumerator CreateChunksOverTime(int actualChunkX, int actualChunkZ, GameObject chunkObject, bool generateColumnsPerFrame = false)
     {
         generatingChunk = true;
         for (int x = 0; x < chunkSize; x++)
@@ -118,13 +118,14 @@ public class WorldGenerator : MonoBehaviour
                 
                 //generate columns, over time so it doesn't freeze the entire pc while its generating
                 StartCoroutine(CreateColumnsOverTime(stoneHeightBorder, dirtHeightBorder, (x + actualChunkX), (z + actualChunkZ), chunkObject));
-                
-                if (generateColumnsPerFrame)
+
+                if (generateColumnsPerFrame) 
                     yield return new WaitForEndOfFrame();
 
             }
             yield return new WaitForEndOfFrame();
         }
+        yield return new WaitForEndOfFrame();
         generatingChunk = false;
     }
 
@@ -132,9 +133,8 @@ public class WorldGenerator : MonoBehaviour
     {
         GameObject objToMake;
         bool generate = false;
-        int y = 0;
+        int y = stoneHeightBorder+dirtHeightBorder+1;
         int maxPerFrame = 1;
-        int airblocksInARow = 0;
 
         while (y < heightLimit)
         {
@@ -160,33 +160,28 @@ public class WorldGenerator : MonoBehaviour
                 {
                     objToMake = dirt;
                     generate = true;
-                    airblocksInARow = 0;
                 }
                 else if (y <= stoneHeightBorder + dirtHeightBorder + 1)
                 {
                     objToMake = grass;
                     generate = true;
-                    airblocksInARow = 0;
                 }
                 else
                 {
-                    airblocksInARow++;
                     objToMake = null;
                     generate = false;
-                    if (airblocksInARow > 10)
-                    {
-                        spawned = maxPerFrame;
-                        y = heightLimit;
-                        //Debug.Log("done");
-                    }
+                    spawned = maxPerFrame;
+                    y = heightLimit;
                 }
                 if (generate)
                 {
                     GameObject c = (GameObject)Instantiate(objToMake, new Vector3(x, y, z), Quaternion.identity);
                     c.transform.parent = chunkObject.transform;
                 }
-                y++;
+                y--;
             }
+            float randomDelay = Random.Range(0.1f, 1f);
+            yield return new WaitForSeconds(randomDelay);
             yield return new WaitForEndOfFrame();
         }
 
