@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 5a5e24393d94cda4691c675a6fba5b9b
+timeCreated: 1434897156
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - grass: {fileID: 107728, guid: 3b7e7484b8105f44aaf6a2c9ca09cc71, type: 2}
+  - stone: {fileID: 147132, guid: d9c582cbea4cf29479fc47f4126589ef, type: 2}
+  - dirt: {fileID: 111306, guid: bf84c4c8aefa5d04282215f9498beac2, type: 2}
+  - emeraldOre: {fileID: 119128, guid: 10cb6ca7141dc844cb19a962b7c10b40, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

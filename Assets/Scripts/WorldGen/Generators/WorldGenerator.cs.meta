@@ -1,10 +1,15 @@
 fileFormatVersion: 2
 guid: 28d7f23d7db7ba042b515cd2a6b3b1c1
-timeCreated: 1434618251
+timeCreated: 1434894069
 licenseType: Free
 MonoImporter:
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - grass: {instanceID: 0}
+  - stone: {instanceID: 0}
+  - dirt: {instanceID: 0}
+  - emeraldOre: {instanceID: 0}
+  - chunk: {fileID: 186248, guid: 6fbc21be0790c3e439146637d8b91024, type: 2}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

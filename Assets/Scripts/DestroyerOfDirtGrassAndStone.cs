@@ -16,7 +16,7 @@ public class DestroyerOfDirtGrassAndStone : MonoBehaviour {
                 Transform chunk = transform.GetChild(i);
                 for (int e = 0; e < chunk.transform.childCount; e++)
                 {
-                    if (chunk.GetChild(e).tag != "Ore")
+                    if (chunk.GetChild(e).tag == "FillerBlock")
                     {
                         Destroy(chunk.GetChild(e).gameObject);
                     }
