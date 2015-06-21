@@ -2,20 +2,153 @@
 using System.Collections;
 using SimplexNoise;
 using System.Threading;
+using System;
+using System.Collections.Generic;
 
 public class ChunkGenerator : MonoBehaviour {
     public GameObject grass;
     public GameObject stone;
     public GameObject dirt;
     public GameObject emeraldOre;
+    public bool shouldUpdate = false;
 
+    public enum BlockType{
+        grass,stone,dirt,emeraldOre
+    }
+    public struct BlockData
+    {
+        public bool visibility;
+        public bool isSpawned;
+        public BlockType type;
+        public Vector3 position;
+        public bool isAnActualBlock;
+
+        public BlockData(bool visibility, BlockType type, Vector3 pos, bool block)
+        {
+            this.visibility = visibility;
+            this.type = type;
+            isSpawned = false;
+            position = pos;
+            isAnActualBlock = block;
+        }
+    }
+
+    //x,y,z
+    public BlockData[,,] Blocks;
+    
     private int chunkSize;
 
     public void init(int chunkSize, int actualChunkX, int actualChunkZ, bool generateColumnsPerFrame = false)
     {
         this.chunkSize = chunkSize;
-        
+        Blocks = new BlockData[chunkSize, 128, chunkSize];
         StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, generateColumnsPerFrame));
+    }
+
+    void Update() { 
+        if(shouldUpdate)
+        {
+            shouldUpdate = false;
+            updateChunk();
+        }
+    }
+
+
+    public void updateChunk()
+    {
+        for (int x = 0; x < Blocks.GetLength(0); x++)
+        {
+            for (int y = 0; y < Blocks.GetLength(1); y++)
+            {
+                for (int z = 0; z < Blocks.GetLength(2); z++)
+                {
+                    BlockData block = Blocks[x, y, z];
+                    block.visibility = false; // set visibility to false per default, resulting in this block not being spawned
+
+                    //Debug.Log("x:" + x + "y:"+y + "z"+z);
+
+                    //if, else if, else if... i dont like the look of the else if, but ultimately it results in less cpu cycles 
+                    //(stopping after the first true, instead of calculating the rest of the if statements too...
+                    //could do it all in a single if statement, but this way its slightly seperated
+
+                    //if the block directly above it has a type of null (air),make this block visible
+                    if (y + 1 < Blocks.GetLength(1) && !Blocks[x, y+1, z].isAnActualBlock)
+                    {
+                        block.visibility = true;
+                    }//if one of the adjacent blocks has a type of null (air) make this block visibile
+                    else if (( x + 1 < Blocks.GetLength(0) && !Blocks[x + 1, y, z].isAnActualBlock) ||
+                             ( x - 1 >= 0 && !Blocks[x - 1, y, z].isAnActualBlock))
+                    {
+                        block.visibility = true;
+                    }else if(( z + 1 < Blocks.GetLength(2) && !Blocks[x, y, z + 1].isAnActualBlock) ||
+                             ( z - 1 >= 0 && !Blocks[x, y, z - 1].isAnActualBlock))
+                    {
+                        block.visibility = true;
+                    }//if the block directly below this one has a type of null (air), make this block visible
+                    else if (y - 1 > 0 && !Blocks[x, y - 1, z].isAnActualBlock)
+                    {
+                        block.visibility = true;
+                    }
+
+                    //if visible
+                    if (block.visibility)
+                        showBlock(block);
+                    else
+                        hideBlock(block);
+                }
+            }
+
+        }
+
+    }
+
+    public void showBlock(BlockData block)
+    {
+        //Debug.Log("show it");
+        GameObject objToSpawn = dirt; //default value, wornt actually be spawned, the default case defined below prevents that
+        bool generate = true;
+
+        switch (block.type)
+        {
+            case BlockType.dirt:
+                objToSpawn = dirt;
+                break;
+            case BlockType.emeraldOre:
+                objToSpawn = emeraldOre;
+                break;
+            case BlockType.grass:
+                objToSpawn = grass;
+                break;
+            case BlockType.stone:
+                objToSpawn = stone;
+                break;
+            default:
+                generate = false;
+                break;
+        }
+
+        if (!block.isSpawned && generate)
+        {
+            //spawn new block here
+            GameObject c = (GameObject)Instantiate(objToSpawn, block.position, Quaternion.identity);
+            c.name = "b_x" + block.position.x + "_y" + block.position.y + "_z" + block.position.z;
+            c.transform.parent = gameObject.transform;
+            block.isSpawned = true;
+        }
+
+    }
+    public void hideBlock(BlockData block)
+    {
+        if(block.isSpawned)
+        {
+            //break block
+
+            //mercilessly destroy the gameobject!! muahahaha!!.. no really... i judged that implementing the same primitive object pooling thing
+            //i did for chunks on block level would require too many resources, and this is after all single blocks we're talking about, so 
+            //re instantiating it would probably not require that many resources
+            Destroy(transform.Find("b_x" + block.position.x + "_y" + block.position.y + "_z" + block.position.z).gameObject);
+            block.isSpawned = false;
+        }
     }
 
 
@@ -108,7 +241,7 @@ public class ChunkGenerator : MonoBehaviour {
     /// <returns>nothing of note, only there to be able to use delays in here</returns>
     IEnumerator CreateColumnsOverTime(int stoneHeightBorder, int dirtHeightBorder, int x, int z)
     {
-        GameObject objToMake = stone;
+        BlockType objToMake = BlockType.stone; //default
         bool generate = false;
         int y = stoneHeightBorder + dirtHeightBorder + 1;
         int maxPerFrame = 1;
@@ -119,7 +252,7 @@ public class ChunkGenerator : MonoBehaviour {
             {
                 if (y <= stoneHeightBorder)
                 {
-                    objToMake = stone;
+                    objToMake = BlockType.stone;
                     float f = SimplexNoiseFloat(x, y, z, 10, 2, 0);
                     //1.7 seems reasonable for iron or coal veins
                     //the closer to 2 the rarer stuff is
@@ -129,31 +262,33 @@ public class ChunkGenerator : MonoBehaviour {
                     if (f > 1.9)
                     {
                         //Debug.Log(f);
-                        objToMake = emeraldOre;
+                        objToMake = BlockType.emeraldOre;
                     }
                     generate = true;
                 }
                 else if (y <= stoneHeightBorder + dirtHeightBorder)
                 {
-                    objToMake = dirt;
+                    objToMake = BlockType.dirt;
                     generate = true;
                 }
                 else if (y <= stoneHeightBorder + dirtHeightBorder + 1)
                 {
-                    objToMake = grass;
+                    objToMake = BlockType.grass;
                     generate = true;
                 }
                 else
                 {
-                    objToMake = null;
                     generate = false;
                 }
-                if (generate)
-                {
+                //if (generate)
+                //{
                     if (gameObject)//probably not necessary with this if, this i used before i seperated the chunk gen to a different class
                     {
-                        GameObject c = (GameObject)Instantiate(objToMake, new Vector3(x, y, z), Quaternion.identity);
-                        c.transform.parent = gameObject.transform;
+                        int _x = Mathf.Abs(x);
+                        int _z = Mathf.Abs(z);
+                        Blocks[_x%chunkSize,y,_z%chunkSize] = new BlockData(false, objToMake, new Vector3(x,y,z), generate);
+                        //GameObject c = (GameObject)Instantiate(objToMake, new Vector3(x, y, z), Quaternion.identity);
+                        //c.transform.parent = gameObject.transform;
                     }
                     else
                     {
@@ -161,10 +296,10 @@ public class ChunkGenerator : MonoBehaviour {
                         y = 0;
                         spawned = maxPerFrame;
                     }
-                }
+                //}
                 y--;
             }
-            float randomDelay = Random.Range(0.1f, 1f);
+            float randomDelay = UnityEngine.Random.Range(0.1f, 1f);
             yield return new WaitForSeconds(randomDelay);
             yield return new WaitForEndOfFrame();
         }
