@@ -116,6 +116,9 @@ public class WorldGenerator : MonoBehaviour
 
                     //StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, chunk));
                 }
+                else if (!PlayerPosHasChanged && !transform.Find("chunk_x" + loopPos.x + "_z" + loopPos.y).gameObject.activeInHierarchy)
+                    transform.Find("chunk_x" + loopPos.x + "_z" + loopPos.y).gameObject.SetActive(true);
+
                 #endregion
 
 
@@ -214,7 +217,8 @@ public class WorldGenerator : MonoBehaviour
                 }
 
                 if (breakIt)
-                    Destroy(obj);
+                    obj.SetActive(false);
+                    //Destroy(obj);
 
             }
         }
