@@ -41,7 +41,7 @@ public class ChunkGenerator : MonoBehaviour {
     public void init(int chunkSize, int actualChunkX, int actualChunkZ, bool generateColumnsPerFrame = false)
     {
         this.chunkSize = chunkSize;
-        Blocks = new BlockData[chunkSize, 128, chunkSize];
+        Blocks = new BlockData[chunkSize, 32, chunkSize];
         StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, generateColumnsPerFrame));
     }
 
@@ -49,21 +49,23 @@ public class ChunkGenerator : MonoBehaviour {
         if(shouldUpdate)
         {
             shouldUpdate = false;
-            updateChunk();
+            StartCoroutine(updateChunk());
         }
     }
 
 
-    public void updateChunk()
+    IEnumerator updateChunk()
     {
         for (int x = 0; x < Blocks.GetLength(0); x++)
         {
-            for (int y = 0; y < Blocks.GetLength(1); y++)
+            for (int z = 0; z < Blocks.GetLength(2); z++)
             {
-                for (int z = 0; z < Blocks.GetLength(2); z++)
+                int blocksToShow = 10;
+
+                for (int y = 0; y < Blocks.GetLength(1)-1; y++)
                 {
                     BlockData block = Blocks[x, y, z];
-                    block.visibility = false; // set visibility to false per default, resulting in this block not being spawned
+                    /*block.visibility = false; // set visibility to false per default, resulting in this block not being spawned
 
                     //Debug.Log("x:" + x + "y:"+y + "z"+z);
 
@@ -72,16 +74,17 @@ public class ChunkGenerator : MonoBehaviour {
                     //could do it all in a single if statement, but this way its slightly seperated
 
                     //if the block directly above it has a type of null (air),make this block visible
-                    if (y + 1 < Blocks.GetLength(1) && !Blocks[x, y+1, z].isAnActualBlock)
+                    if (y + 1 < Blocks.GetLength(1) && !Blocks[x, y + 1, z].isAnActualBlock)
                     {
                         block.visibility = true;
                     }//if one of the adjacent blocks has a type of null (air) make this block visibile
-                    else if (( x + 1 < Blocks.GetLength(0) && !Blocks[x + 1, y, z].isAnActualBlock) ||
-                             ( x - 1 >= 0 && !Blocks[x - 1, y, z].isAnActualBlock))
+                    else if ((x + 1 < Blocks.GetLength(0) && !Blocks[x + 1, y, z].isAnActualBlock) ||
+                             (x - 1 >= 0 && !Blocks[x - 1, y, z].isAnActualBlock))
                     {
                         block.visibility = true;
-                    }else if(( z + 1 < Blocks.GetLength(2) && !Blocks[x, y, z + 1].isAnActualBlock) ||
-                             ( z - 1 >= 0 && !Blocks[x, y, z - 1].isAnActualBlock))
+                    }
+                    else if ((z + 1 < Blocks.GetLength(2) && !Blocks[x, y, z + 1].isAnActualBlock) ||
+                            (z - 1 >= 0 && !Blocks[x, y, z - 1].isAnActualBlock))
                     {
                         block.visibility = true;
                     }//if the block directly below this one has a type of null (air), make this block visible
@@ -95,7 +98,15 @@ public class ChunkGenerator : MonoBehaviour {
                         showBlock(block);
                     else
                         hideBlock(block);
+                    */
+                    if (blocksToShow > 0)
+                    {
+                        showBlock(block);
+                        blocksToShow--;
+                        yield return new WaitForEndOfFrame();
+                    }
                 }
+                yield return new WaitForEndOfFrame();
             }
 
         }
@@ -228,6 +239,7 @@ public class ChunkGenerator : MonoBehaviour {
             yield return new WaitForEndOfFrame();
         }
         yield return new WaitForEndOfFrame();
+        shouldUpdate = true;
     }
 
     /// <summary>
