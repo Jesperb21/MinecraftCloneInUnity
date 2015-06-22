@@ -11,6 +11,16 @@ public class WorldGenerator : MonoBehaviour
     GameObject world;
     public GameObject chunk;
 
+    //dictionaries are fancy as fuck, pardon the language; They're kindda like hashmaps, but on the same amount of steroids as lists are in comparison to arrays (well arraylists)
+    //a dictionary is basicly a...well a dictionary... someone has been smart when naming this one xD ...
+    //2 important key differences this collection type has in comparison to hashmaps are: no casting needed, i like that; and significant performance increase
+    // performance increase is always a good thing :)
+    // why not an array? because i dont want to define the entire array at once, kindda ruins the whole idea of procedurally generated worlds
+    // why not a list then? well, because i want mapping between the world position and the chunkgenerator... which i probably should rename to chunk
+    // why not hashmap? because dictionaries are fancy... honestly i like defining what content it can have before i use it, sorta eliminating any misunderstandings
+    //in the future, and no casting required all the time
+    public Dictionary<ChunkPos, ChunkGenerator> chunkDictionary= new Dictionary<ChunkPos, ChunkGenerator>();
+
     public int chunkSize = 4;
     public int radiusToGenerateAroundPlayer = 4;
 
@@ -45,7 +55,7 @@ public class WorldGenerator : MonoBehaviour
     {
         if (DimensionActive)
         {
-            if(!updatingWorld)
+            if(!updatingWorld) //why not just call UpdateWorld you may ask? because i dont want to rerun every single frame, only once a second
                 StartCoroutine(UpdateWorld());
         }
         else
@@ -59,16 +69,17 @@ public class WorldGenerator : MonoBehaviour
         updatingWorld = true;
         if (!player)
         {
-            if (transform.Find("Player"))
+            if (transform.Find("Player")) // if player hasn't been defined
             {
                 player = transform.Find("Player").gameObject;
             }
         }
-        if (player && PlayerPosHasChanged && !generatingChunk && !generatingWorld)
+        // if player is defined, changed position, not generating chunks and not generating the world right now
+        if (player && PlayerPosHasChanged && !generatingChunk && !generatingWorld) 
         {
             PlayerPosHasChanged = false;
             Debug.Log("world generation has been restarted");
-            StartCoroutine(GenerateChunksOverTime());
+            StartCoroutine(GenerateChunksOverTime()); // <--------------- start generating new chunks
         }
         else if //if the players position has changed away from the position stored in PlayerPos 
             (player &&
@@ -115,24 +126,12 @@ public class WorldGenerator : MonoBehaviour
                 {
                     yield return new WaitForEndOfFrame();
                 }
+                    CreateChunk((int)loopPos.x, (int)loopPos.y);
 
-                if (!transform.Find("chunk_x" + loopPos.x + "_z" + loopPos.y) && !PlayerPosHasChanged)//stop generating the same chunk twice && dont generate if player pos has changed
-                {
-                    //instantiate a chunk at the calculated position
-                    GameObject chunkObj = (GameObject)Instantiate(chunk, new Vector3(loopPos.x * chunkSize, 0f, loopPos.y * chunkSize), Quaternion.identity);
-                    chunkObj.transform.parent = transform;
+                    yield return new WaitForEndOfFrame();
+                
 
-                    int actualChunkX = (int)loopPos.x * chunkSize;
-                    int actualChunkZ = (int)loopPos.y * chunkSize;
-
-                    chunkObj.GetComponent<ChunkGenerator>().init(chunkSize, actualChunkX, actualChunkZ);
-                    chunkObj.name = "chunk_x" + loopPos.x + "_z" + loopPos.y;
-
-                    //StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, chunk));
-                }
-                else if (!PlayerPosHasChanged && !transform.Find("chunk_x" + loopPos.x + "_z" + loopPos.y).gameObject.activeInHierarchy)
-                    transform.Find("chunk_x" + loopPos.x + "_z" + loopPos.y).gameObject.SetActive(true);
-
+                
                 #endregion
 
 
@@ -207,6 +206,44 @@ public class WorldGenerator : MonoBehaviour
         generatingWorld = false;
     }
 
+    //note i dont want this to be a co-routine because... well... its fairly simple
+    /// <summary>
+    /// create a chunk if it doesn't exist
+    /// </summary>
+    /// <param name="x">X position of the chunk, note that this uses "chunk coords", so before you call it you will have to use (int)x/chunkSize</param>
+    /// <param name="z">Z position of the chunk, note that this uses "chunk coords", so before you call it you will have to use (int)z/chunkSize</param>
+    /// <param name="spawn">wether or not to instantiate the object, default = true</param>
+    public void CreateChunk(int x, int z, bool spawn = true)
+    {
+        ChunkGenerator chunkGen = null;
+        ChunkPos pos = new ChunkPos(x,z);
+
+        chunkDictionary.TryGetValue(pos, out chunkGen);
+
+
+        if (chunkGen == null)
+        {
+
+            //instantiate a chunk at the calculated position
+            
+            GameObject chunkObj = (GameObject)Instantiate(chunk, new Vector3(x * chunkSize, 0f, z * chunkSize), Quaternion.identity);
+            chunkObj.transform.parent = transform;
+
+            int actualChunkX = x * chunkSize;
+            int actualChunkZ = z * chunkSize;
+
+            //add the chunk object spawned to the dictionary... well the ChunkGenerator script part of the object anyways
+            chunkDictionary.Add(pos, chunkObj.GetComponent<ChunkGenerator>());
+            if(spawn)
+                chunkObj.GetComponent<ChunkGenerator>().init(chunkSize, actualChunkX, actualChunkZ);
+            
+            chunkObj.name = "chunk_x" + x + "_z" + z; // set the name property to know where it is in the world through the inspector
+
+        }
+    }
+
+
+    //should probably remake this function to use the dictionary instead, but it works for now
     //deletes chunks that got out of the range of the player
     void deleteOldChunks(int playerChunkXPos, int playerChunkZPos)
     {

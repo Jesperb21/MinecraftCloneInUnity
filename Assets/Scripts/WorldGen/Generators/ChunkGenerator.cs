@@ -48,7 +48,7 @@ public class ChunkGenerator : MonoBehaviour {
             }
         }
         actualChunkCoords = new Vector3(actualChunkX, 0, actualChunkZ);
-        StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, generateColumnsPerFrame));
+        CreateChunksOverTime(actualChunkX, actualChunkZ, generateColumnsPerFrame);
     }
 
     void Update() { 
@@ -63,22 +63,22 @@ public class ChunkGenerator : MonoBehaviour {
     IEnumerator updateChunk()
     {
         MeshData meshData = new MeshData();
+        
         for (int x = 0; x < Blocks.GetLength(0); x++)
         {
             for (int z = 0; z < Blocks.GetLength(2); z++)
             {
-
-                for (int y = 0; y < Blocks.GetLength(1); y++)
+                for (int y = (Blocks.GetLength(1) - 1); y >= 0; y--)
                 {
+
                     BlockData block = Blocks[x, y, z];
-                    
+
                     meshData = block.Blockdata(this, x, y, z, meshData);
-                    
+
                 }
             }
-
         }
-        yield return new WaitForEndOfFrame();
+        yield return new WaitForSeconds(1f);
         renderMesh(meshData);
     }
 
@@ -89,27 +89,80 @@ public class ChunkGenerator : MonoBehaviour {
         filter.mesh.triangles = meshdata.triangles.ToArray();
 
         filter.mesh.uv = meshdata.uv.ToArray();
+        filter.mesh.Optimize();
         filter.mesh.RecalculateNormals();
 
         collider.sharedMesh = filter.mesh;
+        collider.sharedMesh.Optimize();
         collider.sharedMesh.RecalculateNormals();
 
     }
 
     public ChunkGenerator getChunk(int x, int z)
     {
-        //if x & z coords are out of the range of this chunk, get the chunk needed
+        //if the chunk requested is not this one
         if ((x < actualChunkCoords.x || x >= actualChunkCoords.x + chunkSize) ||
-            (z < actualChunkCoords.z || x >= actualChunkCoords.z + chunkSize)){
-                try
+           (z < actualChunkCoords.z || x >= actualChunkCoords.z + chunkSize))
+        {
+
+            WorldGenerator WG = transform.GetComponentInParent<WorldGenerator>();
+            ChunkGenerator CG = null;
+
+            #region attempt to get the chunk
+            //if x & z coords are out of the range of this chunk, get the chunk needed
+            if (x < actualChunkCoords.x)
+            {
+                WG.chunkDictionary.TryGetValue(new ChunkPos((int)((x - 1)/chunkSize), z), out CG);
+            }
+            else if (x >= actualChunkCoords.x + chunkSize)
+            {
+                WG.chunkDictionary.TryGetValue(new ChunkPos((int)((x + 1)/chunkSize), z), out CG);
+            }
+
+            if (z < actualChunkCoords.z)
+            {
+                WG.chunkDictionary.TryGetValue(new ChunkPos(x, (int)((z - 1)/chunkSize)), out CG);
+            }
+            else if (x >= actualChunkCoords.z + chunkSize)
+            {
+                WG.chunkDictionary.TryGetValue(new ChunkPos(x, (int)((z + 1)/chunkSize)), out CG);
+            }
+            #endregion
+
+            if (CG == null)//if the chunk didn't exist
+            {
+                WG.CreateChunk(x, z);//attempt to create the chunk, not add it to the array, just create it
+
+                #region attempt to get the newly generated chunk again
+                if (x < actualChunkCoords.x)
                 {
-                    return transform.parent.Find("chunk_x" + ((int)x % chunkSize) + "_z" + ((int)z % chunkSize)).gameObject.GetComponent<ChunkGenerator>();
+                    WG.chunkDictionary.TryGetValue(new ChunkPos((int)((x - 1) / chunkSize), z), out CG);
                 }
-                catch
+                else if (x >= actualChunkCoords.x + chunkSize)
                 {
-                    return null;
+                    WG.chunkDictionary.TryGetValue(new ChunkPos((int)((x + 1) / chunkSize), z), out CG);
                 }
-        }else{
+
+                if (z < actualChunkCoords.z)
+                {
+                    WG.chunkDictionary.TryGetValue(new ChunkPos(x, (int)((z - 1) / chunkSize)), out CG);
+                }
+                else if (x >= actualChunkCoords.z + chunkSize)
+                {
+                    WG.chunkDictionary.TryGetValue(new ChunkPos(x, (int)((z + 1) / chunkSize)), out CG);
+                }
+
+                return CG;
+
+                #endregion
+            }
+            else
+            {
+                return CG;
+            }
+        }
+        else
+        {
             return this;
         }
     }
@@ -119,14 +172,20 @@ public class ChunkGenerator : MonoBehaviour {
     {
         int _x = Mathf.Abs(x % chunkSize);
         int _z = Mathf.Abs(z % chunkSize);
+
+        //if at the bottom of the game
         if (y < 0)
         {
             return new BlockData(false, BlockData.BlockType.air, new Vector3(x, y, z), false);
         }
-        else if (y >= airLimit)
+        else if (y >= airLimit)//if at the air limit of the game
         {
             return new BlockData(false, BlockData.BlockType.air, new Vector3(x, y, z), false);
         }
+        
+
+        
+
 
         //get the chunk at the specified position //returns this if the block is in this chunk
         ChunkGenerator CG = getChunk(x, z);
@@ -203,7 +262,7 @@ public class ChunkGenerator : MonoBehaviour {
     /// of the terrain, might use more cpu power while generating, but will be faster.... ultimately generating columns 
     /// per frame looks coolest, so i'll enable that per default ;)</param>
     /// <returns>nothing of note, IEnumerator's are used for coroutines</returns>
-    IEnumerator CreateChunksOverTime(int actualChunkX, int actualChunkZ, bool generateColumnsPerFrame = false)
+    private void CreateChunksOverTime(int actualChunkX, int actualChunkZ, bool generateColumnsPerFrame = false)
     {
         for (int x = 0; x < chunkSize; x++)
         {
@@ -269,15 +328,15 @@ public class ChunkGenerator : MonoBehaviour {
                     dirtHeightBorder = 1;
 
                 //generate columns, over time so it doesn't freeze the entire pc while its generating
-                StartCoroutine(CreateColumnsOverTime(stoneHeightBorder, dirtHeightBorder, (x + actualChunkX), (z + actualChunkZ)));
+                CreateColumnsOverTime(stoneHeightBorder, dirtHeightBorder, (x + actualChunkX), (z + actualChunkZ));
 
-                if (generateColumnsPerFrame)
-                    yield return new WaitForEndOfFrame();
+                /*if (generateColumnsPerFrame)
+                    yield return new WaitForEndOfFrame();*/
 
             }
-            yield return new WaitForEndOfFrame();
+            //yield return new WaitForEndOfFrame();
         }
-        yield return new WaitForEndOfFrame();
+        //yield return new WaitForEndOfFrame();
         shouldUpdate = true;
     }
 
@@ -290,7 +349,7 @@ public class ChunkGenerator : MonoBehaviour {
     /// <param name="z">z position of the column</param>
     /// <param name="chunkObject">which chunk object to add the column to</param>
     /// <returns>nothing of note, only there to be able to use delays in here</returns>
-    IEnumerator CreateColumnsOverTime(int stoneHeightBorder, int dirtHeightBorder, int x, int z)
+    private void CreateColumnsOverTime(int stoneHeightBorder, int dirtHeightBorder, int x, int z)
     {
         BlockData.BlockType objToMake = BlockData.BlockType.stone; //default
         bool generate = false;
@@ -355,9 +414,6 @@ public class ChunkGenerator : MonoBehaviour {
                 //}
                 y--;
             }
-            float randomDelay = UnityEngine.Random.Range(0.1f, 1f);
-            yield return new WaitForSeconds(randomDelay);
-            yield return new WaitForEndOfFrame();
         }
 
     }

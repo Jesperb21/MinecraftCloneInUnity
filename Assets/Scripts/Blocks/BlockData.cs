@@ -87,7 +87,8 @@ public class BlockData
         return meshData;
 
     }
-    
+
+    #region add data about the different faces of the block
 
     protected virtual MeshData FaceDataUp(ChunkGenerator chunk, int x, int y, int z, MeshData meshData)
     {
@@ -160,5 +161,6 @@ public class BlockData
         //meshData.uv.AddRange(FaceUVs(Direction.west));
         return meshData;
     }
+    #endregion
 }
 
