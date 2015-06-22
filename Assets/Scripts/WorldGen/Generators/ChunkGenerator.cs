@@ -239,7 +239,7 @@ public class ChunkGenerator : MonoBehaviour {
             yield return new WaitForEndOfFrame();
         }
         yield return new WaitForEndOfFrame();
-        shouldUpdate = true;
+        //shouldUpdate = true;
     }
 
     /// <summary>
@@ -299,6 +299,11 @@ public class ChunkGenerator : MonoBehaviour {
                         int _x = Mathf.Abs(x);
                         int _z = Mathf.Abs(z);
                         Blocks[_x%chunkSize,y,_z%chunkSize] = new BlockData(false, objToMake, new Vector3(x,y,z), generate);
+                        if (generate)
+                        {
+                            showBlock(Blocks[_x%chunkSize, y, _z%chunkSize]);
+
+                        }
                         //GameObject c = (GameObject)Instantiate(objToMake, new Vector3(x, y, z), Quaternion.identity);
                         //c.transform.parent = gameObject.transform;
                     }
