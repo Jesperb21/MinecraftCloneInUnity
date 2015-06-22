@@ -12,26 +12,7 @@ public class ChunkGenerator : MonoBehaviour {
     public GameObject emeraldOre;
     public bool shouldUpdate = false;
 
-    public enum BlockType{
-        grass,stone,dirt,emeraldOre
-    }
-    public struct BlockData
-    {
-        public bool visibility;
-        public bool isSpawned;
-        public BlockType type;
-        public Vector3 position;
-        public bool isAnActualBlock;
-
-        public BlockData(bool visibility, BlockType type, Vector3 pos, bool block)
-        {
-            this.visibility = visibility;
-            this.type = type;
-            isSpawned = false;
-            position = pos;
-            isAnActualBlock = block;
-        }
-    }
+    
 
     //x,y,z
     public BlockData[,,] Blocks;
@@ -42,6 +23,16 @@ public class ChunkGenerator : MonoBehaviour {
     {
         this.chunkSize = chunkSize;
         Blocks = new BlockData[chunkSize, 32, chunkSize];
+        for (int x = 0; x < chunkSize; x++ )
+        {
+            for (int y = 0; y < 32; y++)
+            {
+                for (int z = 0; z < chunkSize; z++)
+                {
+                    Blocks[x, y, z] = new BlockData(false, BlockData.BlockType.air, new Vector3((actualChunkX + x), y, (actualChunkZ + z)), false);
+                }
+            }
+        }
         StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, generateColumnsPerFrame));
     }
 
@@ -62,10 +53,10 @@ public class ChunkGenerator : MonoBehaviour {
             {
                 int blocksToShow = 10;
 
-                for (int y = 0; y < Blocks.GetLength(1)-1; y++)
+                for (int y = 0; y < Blocks.GetLength(1); y++)
                 {
                     BlockData block = Blocks[x, y, z];
-                    /*block.visibility = false; // set visibility to false per default, resulting in this block not being spawned
+                    block.visibility = false; // set visibility to false per default, resulting in this block not being spawned
 
                     //Debug.Log("x:" + x + "y:"+y + "z"+z);
 
@@ -93,24 +84,26 @@ public class ChunkGenerator : MonoBehaviour {
                         block.visibility = true;
                     }
 
+                    //yield return new WaitForEndOfFrame();
+
                     //if visible
                     if (block.visibility)
                         showBlock(block);
                     else
                         hideBlock(block);
-                    */
+                    /*
                     if (blocksToShow > 0)
                     {
                         showBlock(block);
                         blocksToShow--;
                         yield return new WaitForEndOfFrame();
-                    }
+                    }*/
                 }
-                yield return new WaitForEndOfFrame();
+                //yield return new WaitForEndOfFrame();
             }
 
         }
-
+        yield return new WaitForEndOfFrame();
     }
 
     public void showBlock(BlockData block)
@@ -121,16 +114,16 @@ public class ChunkGenerator : MonoBehaviour {
 
         switch (block.type)
         {
-            case BlockType.dirt:
+            case BlockData.BlockType.dirt:
                 objToSpawn = dirt;
                 break;
-            case BlockType.emeraldOre:
+            case BlockData.BlockType.emeraldOre:
                 objToSpawn = emeraldOre;
                 break;
-            case BlockType.grass:
+            case BlockData.BlockType.grass:
                 objToSpawn = grass;
                 break;
-            case BlockType.stone:
+            case BlockData.BlockType.stone:
                 objToSpawn = stone;
                 break;
             default:
@@ -239,7 +232,7 @@ public class ChunkGenerator : MonoBehaviour {
             yield return new WaitForEndOfFrame();
         }
         yield return new WaitForEndOfFrame();
-        //shouldUpdate = true;
+        shouldUpdate = true;
     }
 
     /// <summary>
@@ -253,7 +246,7 @@ public class ChunkGenerator : MonoBehaviour {
     /// <returns>nothing of note, only there to be able to use delays in here</returns>
     IEnumerator CreateColumnsOverTime(int stoneHeightBorder, int dirtHeightBorder, int x, int z)
     {
-        BlockType objToMake = BlockType.stone; //default
+        BlockData.BlockType objToMake = BlockData.BlockType.stone; //default
         bool generate = false;
         int y = stoneHeightBorder + dirtHeightBorder + 1;
         int maxPerFrame = 1;
@@ -264,7 +257,7 @@ public class ChunkGenerator : MonoBehaviour {
             {
                 if (y <= stoneHeightBorder)
                 {
-                    objToMake = BlockType.stone;
+                    objToMake = BlockData.BlockType.stone;
                     float f = SimplexNoiseFloat(x, y, z, 10, 2, 0);
                     //1.7 seems reasonable for iron or coal veins
                     //the closer to 2 the rarer stuff is
@@ -274,18 +267,18 @@ public class ChunkGenerator : MonoBehaviour {
                     if (f > 1.9)
                     {
                         //Debug.Log(f);
-                        objToMake = BlockType.emeraldOre;
+                        objToMake = BlockData.BlockType.emeraldOre;
                     }
                     generate = true;
                 }
                 else if (y <= stoneHeightBorder + dirtHeightBorder)
                 {
-                    objToMake = BlockType.dirt;
+                    objToMake = BlockData.BlockType.dirt;
                     generate = true;
                 }
                 else if (y <= stoneHeightBorder + dirtHeightBorder + 1)
                 {
-                    objToMake = BlockType.grass;
+                    objToMake = BlockData.BlockType.grass;
                     generate = true;
                 }
                 else
@@ -299,11 +292,11 @@ public class ChunkGenerator : MonoBehaviour {
                         int _x = Mathf.Abs(x);
                         int _z = Mathf.Abs(z);
                         Blocks[_x%chunkSize,y,_z%chunkSize] = new BlockData(false, objToMake, new Vector3(x,y,z), generate);
-                        if (generate)
+                        /*if (generate)
                         {
                             showBlock(Blocks[_x%chunkSize, y, _z%chunkSize]);
 
-                        }
+                        }*/
                         //GameObject c = (GameObject)Instantiate(objToMake, new Vector3(x, y, z), Quaternion.identity);
                         //c.transform.parent = gameObject.transform;
                     }

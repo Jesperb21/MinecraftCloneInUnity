@@ -24,6 +24,7 @@ public class WorldGenerator : MonoBehaviour
     private GameObject player;
 
     private bool DimensionActive;
+    private bool updatingWorld;
 
     // Use this for initialization
     void Start()
@@ -43,37 +44,49 @@ public class WorldGenerator : MonoBehaviour
     {
         if (DimensionActive)
         {
-            if (!player)
-            {
-                if (transform.Find("Player"))
-                {
-                    player = transform.Find("Player").gameObject;
-                }
-            }
-            if (player && PlayerPosHasChanged && !generatingChunk && !generatingWorld)
-            {
-                PlayerPosHasChanged = false;
-                Debug.Log("world generation has been restarted");
-                StartCoroutine(GenerateChunksOverTime());
-            }
-
-            //if the players position has changed away from the position stored in PlayerPos
-            if (player &&
-                (int)(PlayerPos.x) != (int)(player.transform.position.x) &&
-                (int)(PlayerPos.z) != (int)(player.transform.position.z))
-            {
-                //change the boolean PlayerPosHasChanged to true, to allow the world gen to know to stop all generation and restart it... 
-                //might make issues when the player runs in a single direction too fast for the world to be generated fast enough, oh well
-                PlayerPosHasChanged = true;
-                Debug.Log("players position has changed, restart world gen");
-                PlayerPos = player.transform.position;
-            }
+            if(!updatingWorld)
+                StartCoroutine(UpdateWorld());
         }
         else
         {
             DimensionActive = gameObject.activeInHierarchy;
         }
     }
+
+    IEnumerator UpdateWorld()
+    {
+        updatingWorld = true;
+        if (!player)
+        {
+            if (transform.Find("Player"))
+            {
+                player = transform.Find("Player").gameObject;
+            }
+        }
+        if (player && PlayerPosHasChanged && !generatingChunk && !generatingWorld)
+        {
+            PlayerPosHasChanged = false;
+            Debug.Log("world generation has been restarted");
+            StartCoroutine(GenerateChunksOverTime());
+        }
+        else if //if the players position has changed away from the position stored in PlayerPos 
+            (player &&
+            (int)(PlayerPos.x) != (int)(player.transform.position.x) &&
+            (int)(PlayerPos.z) != (int)(player.transform.position.z))
+        {
+            //change the boolean PlayerPosHasChanged to true, to allow the world gen to know to stop all generation and restart it... 
+            //might make issues when the player runs in a single direction too fast for the world to be generated fast enough, oh well
+            PlayerPosHasChanged = true;
+            Debug.Log("players position has changed, restart world gen");
+            PlayerPos = player.transform.position;
+        }
+        else
+        {
+            yield return new WaitForSeconds(1f);
+        }
+        updatingWorld = false;
+    }
+
     IEnumerator GenerateChunksOverTime()
     {
         generatingWorld = true;
