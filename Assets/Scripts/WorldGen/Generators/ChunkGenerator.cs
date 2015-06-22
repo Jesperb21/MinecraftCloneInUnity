@@ -5,27 +5,41 @@ using System.Threading;
 using System;
 using System.Collections.Generic;
 
+//require these components, will automatically get added if they're not on this object already
+[RequireComponent(typeof(MeshFilter))]
+[RequireComponent(typeof(MeshRenderer))]
+[RequireComponent(typeof(MeshCollider))]
+
+
 public class ChunkGenerator : MonoBehaviour {
     public GameObject grass;
     public GameObject stone;
     public GameObject dirt;
     public GameObject emeraldOre;
     public bool shouldUpdate = false;
+    public int airLimit = 32;
 
-    
+    public Vector3 actualChunkCoords;
 
     //x,y,z
     public BlockData[,,] Blocks;
     
+
+    private MeshFilter filter;
+    private MeshCollider collider;
+
     private int chunkSize;
 
     public void init(int chunkSize, int actualChunkX, int actualChunkZ, bool generateColumnsPerFrame = false)
     {
+        filter = gameObject.GetComponent<MeshFilter>();
+        collider = gameObject.GetComponent<MeshCollider>();
+
         this.chunkSize = chunkSize;
-        Blocks = new BlockData[chunkSize, 32, chunkSize];
+        Blocks = new BlockData[chunkSize, airLimit, chunkSize];
         for (int x = 0; x < chunkSize; x++ )
         {
-            for (int y = 0; y < 32; y++)
+            for (int y = 0; y < airLimit; y++)
             {
                 for (int z = 0; z < chunkSize; z++)
                 {
@@ -33,6 +47,7 @@ public class ChunkGenerator : MonoBehaviour {
                 }
             }
         }
+        actualChunkCoords = new Vector3(actualChunkX, 0, actualChunkZ);
         StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, generateColumnsPerFrame));
     }
 
@@ -43,67 +58,87 @@ public class ChunkGenerator : MonoBehaviour {
             StartCoroutine(updateChunk());
         }
     }
-
+    
 
     IEnumerator updateChunk()
     {
+        MeshData meshData = new MeshData();
         for (int x = 0; x < Blocks.GetLength(0); x++)
         {
             for (int z = 0; z < Blocks.GetLength(2); z++)
             {
-                int blocksToShow = 10;
 
                 for (int y = 0; y < Blocks.GetLength(1); y++)
                 {
                     BlockData block = Blocks[x, y, z];
-                    block.visibility = false; // set visibility to false per default, resulting in this block not being spawned
-
-                    //Debug.Log("x:" + x + "y:"+y + "z"+z);
-
-                    //if, else if, else if... i dont like the look of the else if, but ultimately it results in less cpu cycles 
-                    //(stopping after the first true, instead of calculating the rest of the if statements too...
-                    //could do it all in a single if statement, but this way its slightly seperated
-
-                    //if the block directly above it has a type of null (air),make this block visible
-                    if (y + 1 < Blocks.GetLength(1) && !Blocks[x, y + 1, z].isAnActualBlock)
-                    {
-                        block.visibility = true;
-                    }//if one of the adjacent blocks has a type of null (air) make this block visibile
-                    else if ((x + 1 < Blocks.GetLength(0) && !Blocks[x + 1, y, z].isAnActualBlock) ||
-                             (x - 1 >= 0 && !Blocks[x - 1, y, z].isAnActualBlock))
-                    {
-                        block.visibility = true;
-                    }
-                    else if ((z + 1 < Blocks.GetLength(2) && !Blocks[x, y, z + 1].isAnActualBlock) ||
-                            (z - 1 >= 0 && !Blocks[x, y, z - 1].isAnActualBlock))
-                    {
-                        block.visibility = true;
-                    }//if the block directly below this one has a type of null (air), make this block visible
-                    else if (y - 1 > 0 && !Blocks[x, y - 1, z].isAnActualBlock)
-                    {
-                        block.visibility = true;
-                    }
-
-                    //yield return new WaitForEndOfFrame();
-
-                    //if visible
-                    if (block.visibility)
-                        showBlock(block);
-                    else
-                        hideBlock(block);
-                    /*
-                    if (blocksToShow > 0)
-                    {
-                        showBlock(block);
-                        blocksToShow--;
-                        yield return new WaitForEndOfFrame();
-                    }*/
+                    
+                    meshData = block.Blockdata(this, x, y, z, meshData);
+                    
                 }
-                //yield return new WaitForEndOfFrame();
             }
 
         }
         yield return new WaitForEndOfFrame();
+        renderMesh(meshData);
+    }
+
+    private void renderMesh(MeshData meshdata)
+    {
+        filter.mesh.Clear();
+        filter.mesh.vertices = meshdata.vertices.ToArray();
+        filter.mesh.triangles = meshdata.triangles.ToArray();
+
+        filter.mesh.uv = meshdata.uv.ToArray();
+        filter.mesh.RecalculateNormals();
+
+        collider.sharedMesh = filter.mesh;
+        collider.sharedMesh.RecalculateNormals();
+
+    }
+
+    public ChunkGenerator getChunk(int x, int z)
+    {
+        //if x & z coords are out of the range of this chunk, get the chunk needed
+        if ((x < actualChunkCoords.x || x >= actualChunkCoords.x + chunkSize) ||
+            (z < actualChunkCoords.z || x >= actualChunkCoords.z + chunkSize)){
+                try
+                {
+                    return transform.parent.Find("chunk_x" + ((int)x % chunkSize) + "_z" + ((int)z % chunkSize)).gameObject.GetComponent<ChunkGenerator>();
+                }
+                catch
+                {
+                    return null;
+                }
+        }else{
+            return this;
+        }
+    }
+
+
+    public BlockData getBlockAt(int x, int y, int z)
+    {
+        int _x = Mathf.Abs(x % chunkSize);
+        int _z = Mathf.Abs(z % chunkSize);
+        if (y < 0)
+        {
+            return new BlockData(false, BlockData.BlockType.air, new Vector3(x, y, z), false);
+        }
+        else if (y >= airLimit)
+        {
+            return new BlockData(false, BlockData.BlockType.air, new Vector3(x, y, z), false);
+        }
+
+        //get the chunk at the specified position //returns this if the block is in this chunk
+        ChunkGenerator CG = getChunk(x, z);
+        
+        if (CG != null)
+        {
+            return CG.Blocks[_x, y, _z]; 
+        }
+        else //if the chunk wasn't found just return an airblock
+        {
+            return new BlockData(false, BlockData.BlockType.air, new Vector3(x, y, z), false);
+        }
     }
 
     public void showBlock(BlockData block)
@@ -189,17 +224,28 @@ public class ChunkGenerator : MonoBehaviour {
                 #endregion
 
                 int stoneHeightBorder = 0;
+                int XModifier = 1; //converted to negative if the chunk's X is a negative value
+                int ZModifier = 1; //converted to negative if the chunk's Z is a negative value
+
+                if (actualChunkX < 0)
+                    XModifier = -XModifier;
+                if (actualChunkZ < 0)
+                    ZModifier = -ZModifier;
+                
+                int _Z = ZModifier*(z + Mathf.Abs(actualChunkZ));
+                int _X = XModifier*(x + Mathf.Abs(actualChunkX));
+
                 //make a new thread to calculate StoneHeightBorder...
                 Thread t = new Thread(() =>
                 {
-                    stoneHeightBorder = SimplexNoise((x + actualChunkX), 1, (z + actualChunkZ), 10, 3, 1.2f);//controls "hills" in the stone
-                    stoneHeightBorder += SimplexNoise((x + actualChunkX), 3, (z + actualChunkZ), 20, 2, 0) + 1; // controls the main levels of stone
+                    stoneHeightBorder = SimplexNoise(_X, 100, _Z, 10, 3, 1.2f);//controls "hills" in the stone
+                    stoneHeightBorder += SimplexNoise(_X, 300, _Z, 20, 2, 0) + 10; // controls the main levels of stone
                     //stoneHeightBorder = SimplexNoise((x + actualChunkX), 100, (z + actualChunkZ), 10, 3, 1.2f);//controls "hills" in the stone
                     //stoneHeightBorder += SimplexNoise((x + actualChunkX), 300, (z + actualChunkZ), 20, 2, 0) + 10; // controls the main levels of stone
                 });
                 t.Start();
                 //while waiting for this line to be calculated (which is probably faster)
-                int dirtHeightBorder = SimplexNoise((x + actualChunkX), 4, (z + actualChunkZ), 80, 1, 0) + 3;
+                int dirtHeightBorder = SimplexNoise(_X, 40, _Z, 80, 10, 0) + 3;
                 //int dirtHeightBorder = SimplexNoise((x + actualChunkX), 40, (z + actualChunkZ), 80, 10, 0) + 3;
                 //and then joining them together
                 t.Join();

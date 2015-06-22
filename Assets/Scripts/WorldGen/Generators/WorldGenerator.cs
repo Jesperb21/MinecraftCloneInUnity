@@ -3,6 +3,7 @@ using System.Collections;
 using SimplexNoise;
 using System.Collections.Generic;
 using System.Threading;
+using System;
 
 //not really a Perlin Noise generator anymore
 public class WorldGenerator : MonoBehaviour
