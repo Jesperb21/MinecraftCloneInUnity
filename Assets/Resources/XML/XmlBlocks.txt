@@ -17,6 +17,13 @@
 		</Textures>
 	</block>
 	<block>
+		<name>stone</name>
+		<type>fillerblock</type>
+		<Textures>
+			<bottom>Textures/stone</bottom>
+		</Textures>
+	</block>
+	<block>
 		<name>ironOre</name>
 		<type>ore</type>
 		<rarity>1.7</rarity>
@@ -33,10 +40,24 @@
 		</Textures>
 	</block>
 	<block>
-		<name>stone</name>
+		<name>coalOre</name>
+		<type>ore</type>
+		<Textures>
+			<bottom>Textures/coal_ore</bottom>
+		</Textures>
+	</block>
+	<block>
+		<name>bedrock</name>
 		<type>fillerblock</type>
 		<Textures>
-			<bottom>Textures/stone</bottom>
+			<bottom>Textures/bedrock</bottom>
+		</Textures>
+	</block>
+	<block>
+		<name>ice</name>
+		<type>fillerblock</type>
+		<Textures>
+			<bottom>Textures/ice</bottom>
 		</Textures>
 	</block>
 </blocks>
