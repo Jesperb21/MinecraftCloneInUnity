@@ -3,77 +3,129 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml;
+using System.Xml.Linq;
+
 
 public class GameController : MonoBehaviour {
 
     public GameObject cube;
     private GameObject[] cubes;
-    //public string path = @"Textures";
-    Texture text;
-    Texture[] Atextures;
-    private List<Texture> Ltextures;
+
     Object[] files;
 
-    //private Texture randomTexture;
-	// Use this for initialization
-	void Start () {
-      // files = Resources.LoadAll("Materials", typeof(Material));
-       // text = (Texture)UnityEditor.AssetDatabase.LoadAssetAtPath("Textures/bottom", typeof(Texture));
+    public TextAsset xmlBlocks;
 
-        //Denne virker fint, til at finde den specifikke texture "bottom".
-       // text = Resources.Load("Textures/bottom", typeof(Texture)) as Texture;
+    private Texture Top;
+    private Texture Side;
+    private Texture Bottom;
 
+    private string bottomPath = string.Empty;
+    private string topPath = string.Empty;
+    private string sidePath = string.Empty;
 
-        //Dette virker helt fint
-        files = Resources.LoadAll("Textures", typeof(Texture));
-        Atextures = new Texture[files.Length];
-        for (int i = 0; i < files.Length; i++)
+    public GameObject MakeCube(string tag)
+    {
+        GameObject NewCube;
+        Transform[] allchilden;
+
+        NewCube = (GameObject)Instantiate(cube, new Vector3((Random.Range(-5, 5)), (Random.Range(-5, 5)), (Random.Range(-5, 5))), Quaternion.identity);
+        NewCube.gameObject.tag = tag;
+        allchilden = NewCube.gameObject.GetComponentsInChildren<Transform>();
+
+        foreach (Transform child in allchilden)
         {
-            Atextures[i] = files[i] as Texture;
+            child.gameObject.tag = tag;
         }
-        Debug.Log(Atextures.Length);
-        
+        NewCube.gameObject.tag = tag;
+
+        GetTextures(NewCube.tag);
+
+        if (bottomPath != string.Empty && topPath != string.Empty && sidePath != string.Empty)
+        {
+            GameObject childBottom = NewCube.transform.Find("Bottom").gameObject;
+            childBottom.GetComponent<Renderer>().material.mainTexture = Bottom;
+            GameObject childTop = NewCube.transform.Find("Top").gameObject;
+            childTop.GetComponent<Renderer>().material.mainTexture = Top;
+            GameObject childFront = NewCube.transform.Find("Front").gameObject;
+            childFront.GetComponent<Renderer>().material.mainTexture = Side;
+            GameObject childBack = NewCube.transform.Find("Back").gameObject;
+            childBack.GetComponent<Renderer>().material.mainTexture = Side;
+            GameObject childRight = NewCube.transform.Find("Right").gameObject;
+            childRight.GetComponent<Renderer>().material.mainTexture = Side;
+            GameObject childLeft = NewCube.transform.Find("Left").gameObject;
+            childLeft.GetComponent<Renderer>().material.mainTexture = Side;
+        }
+        else if (bottomPath != string.Empty && topPath == string.Empty && sidePath == string.Empty)
+        {
+            GameObject childBottom = NewCube.transform.Find("Bottom").gameObject;
+            childBottom.GetComponent<Renderer>().material.mainTexture = Bottom;
+            GameObject childTop = NewCube.transform.Find("Top").gameObject;
+            childTop.GetComponent<Renderer>().material.mainTexture = Bottom;
+            GameObject childFront = NewCube.transform.Find("Front").gameObject;
+            childFront.GetComponent<Renderer>().material.mainTexture = Bottom;
+            GameObject childBack = NewCube.transform.Find("Back").gameObject;
+            childBack.GetComponent<Renderer>().material.mainTexture = Bottom;
+            GameObject childRight = NewCube.transform.Find("Right").gameObject;
+            childRight.GetComponent<Renderer>().material.mainTexture = Bottom;
+            GameObject childLeft = NewCube.transform.Find("Left").gameObject;
+            childLeft.GetComponent<Renderer>().material.mainTexture = Bottom;
+           /* Debug.Log("venter på children");
+            foreach (Transform child in allchilden)
+            {
+                child.GetComponent<Renderer>().material.mainTexture = Bottom;
+            }*/
+        }
+        return NewCube;
+    }
+
+    void GetTextures(string cubeTag)
+    {
+        //TextAsset asset = (TextAsset)Resources.Load("XmlBlocks");
+        // string datafilecontent = asset.text;
+
+       // Debug.Log("myXML: " + xmlBlocks.text);
+        XmlDocument xmlDoc = new XmlDocument();
+        xmlDoc.LoadXml(xmlBlocks.text);
+
+        foreach (XmlElement child in xmlDoc.SelectNodes("blocks/block"))
+        {
+            if (child.SelectSingleNode("name").InnerXml == cubeTag)
+            {
+                foreach (XmlElement item in child.SelectNodes("Textures"))
+                {
+                    if (item.SelectSingleNode("bottom") != null)
+                    {
+                        bottomPath = item.SelectSingleNode("bottom").InnerText;
+                        Bottom = Resources.Load(bottomPath, typeof(Texture)) as Texture;
+                    }
+                  //  Debug.Log("bottom: " + bottomPath);
+                    if (item.SelectSingleNode("top") != null)
+                    {
+                        topPath = item.SelectSingleNode("top").InnerText;
+                        Top = Resources.Load(topPath, typeof(Texture)) as Texture;
+                    }
+                  //  Debug.Log("topPath: " + topPath);
+                    if (item.SelectSingleNode("side") != null)
+                    {
+                        sidePath = item.SelectSingleNode("side").InnerText;
+                        Side = Resources.Load(sidePath, typeof(Texture)) as Texture;
+                    }
+                  //  Debug.Log("sidePath: " + sidePath);
+                }
+            }
+        }
+    }
+
+	void Start () {
 
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            // Instantiate(this, new Vector3(0, 1, 0), Quaternion.identity);
-
-            Instantiate(cube, new Vector3((Random.Range(-5, 5)), (Random.Range(-5, 5)), (Random.Range(-5, 5))), Quaternion.identity);
-           
-            
-            GameObject child = cube.transform.Find("Top").gameObject;
-
-           /* foreach (Object file in files)
-            {
-                Texture t = (Texture)file;
-                Debug.Log("t :" + t.name);
-                textures.Add(t);
-            }
-            Texture[] At = textures.ToArray();*/
-           // Material[] m = (Material[])Resources.LoadAll("Materials", typeof(Material));
-
-           // Material tAdd = m[Random.Range(0, m.Length)];
-
-
-
-            //Texture[] textures = (Texture[])UnityEditor.AssetDatabase.LoadAssetAtPath(path, typeof(Texture));
-            //Object[] textures = Resources.LoadAll(path,typeof(Texture));
-           
-           // Debug.Log("index: " + textures.Length);
-            //Texture texture = (Texture)textures[Random.Range(0, textures.Length-1)];
-
-            //Texture[] textures = (Texture[])Resources.LoadAll(path);
-           // textures.Add(Resources.LoadAll(path));
-            //Texture texture = texturesA[Random.Range(0, texturesA.Length)];
-           // Debug.Log("Texture : " + texture.name);
-            text = Atextures[Random.Range(0, Atextures.Length)];
-            child.GetComponent<Renderer>().material.mainTexture = text;
-           // child.GetComponent<Renderer>().material.mainTexture = randomTexture;
-
+            MakeCube("stone");         
         }
 	}
 }
