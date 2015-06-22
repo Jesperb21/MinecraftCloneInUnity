@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>Unity.Newtonsoft.Json</id>
+    <version>7.0.0.0</version>
+    <title>Unity.Json.NET</title>
+    <authors>CodeCapers, Newtonsoft</authors>
+    <owners>CodeCapers, Newtonsoft</owners>
+    <projectUrl>https://github.com/codecapers/Unity.Newtonsoft.Json</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Json.NET is a popular high-performance JSON framework for .NET</description>
+    <copyright>Copyright © James Newton-King 2008</copyright>
+    <tags>C# Json Json.NET Unity</tags>
+  </metadata>
+</package>
