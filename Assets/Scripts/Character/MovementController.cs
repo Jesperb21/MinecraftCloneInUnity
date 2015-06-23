@@ -8,14 +8,18 @@ public class MovementController : MonoBehaviour {
     public GameObject groundOject;
 
     private Vector3 moveDirection = Vector3.zero;
+    private bool GravityActivated = false;
 
     void Start()
     {
         Vector3 pos = transform.position;
-        Instantiate(groundOject, new Vector3(pos.x, pos.y-1, pos.z), Quaternion.identity);
+        /*Instantiate(groundOject, new Vector3(pos.x, pos.y-1, pos.z), Quaternion.identity);*/
     }
 
-
+    private void activateGravity()
+    {
+        GravityActivated = true;
+    }
 	// Update is called once per frame
     void Update()
     {
@@ -28,9 +32,16 @@ public class MovementController : MonoBehaviour {
             if (Input.GetButton("Jump"))
                 moveDirection.y = jumpSpeed;
 
+            activateGravity();
         }
-        moveDirection.y -= gravity * Time.deltaTime;
+        else if (Input.GetAxis("Horizontal") + Input.GetAxis("Vertical") != 0)
+        {
+            activateGravity();
+        }
+        if(GravityActivated)
+            moveDirection.y -= gravity * Time.deltaTime;
 
         controller.Move(moveDirection * Time.deltaTime);
     }
+
 }

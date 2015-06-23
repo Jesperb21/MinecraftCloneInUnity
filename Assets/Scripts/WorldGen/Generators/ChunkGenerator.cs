@@ -77,7 +77,7 @@ public class ChunkGenerator : MonoBehaviour {
 
         for (int x = 0; x < chunkSize; x++)
         {
-                    #region ChunkCalculatorThread
+                    #region ChunkCalculatorThread, which isn't really a thread...
                     for (int z = 0; z < chunkSize; z++)
                     {
                         #region comments
@@ -98,23 +98,29 @@ public class ChunkGenerator : MonoBehaviour {
                         int XModifier = 1; //converted to negative if the chunk's X is a negative value
                         int ZModifier = 1; //converted to negative if the chunk's Z is a negative value
 
-                        if (actualChunkX < 0)
+                        /*if (actualChunkX < 0)
                             XModifier = -XModifier;
                         if (actualChunkZ < 0)
                             ZModifier = -ZModifier;
+                        */
+                        
+                        int _Z = actualChunkZ + (z * ZModifier);
+                        int _X = actualChunkX + (x * XModifier);
 
-                        int _Z = ZModifier * (z + Mathf.Abs(actualChunkZ));
-                        int _X = XModifier * (x + Mathf.Abs(actualChunkX));
+
+
+
 
                         //make a new thread to calculate StoneHeightBorder...
                         Thread t = new Thread(() =>
                         {
                             stoneHeightBorder = SimplexNoise(_X, 100, _Z, 10, 3, 1.2f);//controls "hills" in the stone
                             stoneHeightBorder += SimplexNoise(_X, 300, _Z, 20, 2, 0) + 10; // controls the main levels of stone
+
                         });
                         t.Start();
                         //while waiting for this line to be calculated (which is probably faster)
-                        int dirtHeightBorder = SimplexNoise(_X, 40, _Z, 80, 10, 0) + 3;
+                        int dirtHeightBorder = SimplexNoise(_X, 10, _Z, 80, 10, 0.9f) + 10;
                         //int dirtHeightBorder = SimplexNoise((x + actualChunkX), 40, (z + actualChunkZ), 80, 10, 0) + 3;
                         //and then joining them together
                         t.Join();
@@ -254,6 +260,15 @@ public class ChunkGenerator : MonoBehaviour {
             collider.sharedMesh.RecalculateBounds();
             collider.sharedMesh.Optimize();
         }
+    }
+
+    #endregion
+
+    #region manipulation of the chunk
+    public void setBlock(int x, int y, int z)
+    {
+        Blocks[x%chunkSize, y, z%chunkSize].type = BlockData.BlockType.air;
+        Render();
     }
 
     #endregion
