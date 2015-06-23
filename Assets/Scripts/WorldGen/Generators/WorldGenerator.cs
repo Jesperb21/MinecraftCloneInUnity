@@ -28,7 +28,7 @@ public class WorldGenerator : MonoBehaviour
     private bool generatingWorld = false;
 
     private Vector3 PlayerPos;
-    private bool PlayerPosHasChanged = false;
+    private bool PlayerPosHasChanged = true;
 
     private enum dir { xUp, yUp, xDown, yDown };
 
@@ -88,8 +88,8 @@ public class WorldGenerator : MonoBehaviour
         }
         else if //if the players position has changed away from the position stored in PlayerPos 
             (player &&
-            (int)(PlayerPos.x) != (int)(player.transform.position.x) &&
-            (int)(PlayerPos.z) != (int)(player.transform.position.z))
+            (int)(PlayerPos.x/chunkSize) != (int)(player.transform.position.x/chunkSize) &&
+            (int)(PlayerPos.z/chunkSize) != (int)(player.transform.position.z/chunkSize))
         {
             //change the boolean PlayerPosHasChanged to true, to allow the world gen to know to stop all generation and restart it... 
             //might make issues when the player runs in a single direction too fast for the world to be generated fast enough, oh well

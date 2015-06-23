@@ -235,52 +235,69 @@ public class ChunkGenerator : MonoBehaviour {
 
     private void renderMesh(MeshData meshdata)
     {
-        filter.mesh.Clear();
-        filter.mesh.vertices = meshdata.vertices.ToArray();
-        filter.mesh.triangles = meshdata.triangles.ToArray();
+        if (this != null && filter != null && collider != null)
+        {
+            filter.mesh.Clear();
+            filter.mesh.vertices = meshdata.vertices.ToArray();
+            filter.mesh.triangles = meshdata.triangles.ToArray();
 
-        filter.mesh.uv = meshdata.uv.ToArray();
-        filter.mesh.Optimize();
-        filter.mesh.RecalculateNormals();
+            filter.mesh.uv = meshdata.uv.ToArray();
 
-        collider.sharedMesh = filter.mesh;
-        collider.sharedMesh.Optimize();
-        collider.sharedMesh.RecalculateNormals();
+            filter.mesh.RecalculateNormals();
+            filter.mesh.RecalculateBounds();
+            filter.mesh.Optimize();
 
+            collider.sharedMesh = filter.mesh;
+
+
+            collider.sharedMesh.RecalculateNormals();
+            collider.sharedMesh.RecalculateBounds();
+            collider.sharedMesh.Optimize();
+        }
     }
 
     #endregion
 
     #region getters and setters
+    public int GetChunkSize()
+    {
+        return chunkSize;
+    }
 
     public ChunkGenerator getChunk(int x, int z)
     {
         int chunkX = (int)((x+actualChunkCoords.x) /chunkSize);
         int chunkZ = ((int)(z+actualChunkCoords.z) / chunkSize);
-
-        WorldGenerator WG = transform.GetComponentInParent<WorldGenerator>();
-        ChunkGenerator CG = null;
-
-        WG.chunkDictionary.TryGetValue(new ChunkPos(chunkX, chunkZ), out CG);
-        
-        if (CG != null)
-        {   
-            return CG;
-        }
-        else
+        if (this != null)
         {
-            WG.CreateChunk(new ChunkPos(chunkX, chunkZ));
+            WorldGenerator WG = transform.GetComponentInParent<WorldGenerator>();
+            ChunkGenerator CG = null;
+
             WG.chunkDictionary.TryGetValue(new ChunkPos(chunkX, chunkZ), out CG);
+
             if (CG != null)
             {
                 return CG;
             }
             else
             {
-                Debug.LogError("wow, some serius error just occured during the render process of a chunk, and damn you gotta love my error messages");
-            }
+                WG.CreateChunk(new ChunkPos(chunkX, chunkZ));
+                WG.chunkDictionary.TryGetValue(new ChunkPos(chunkX, chunkZ), out CG);
+                if (CG != null)
+                {
+                    return CG;
+                }
+                else
+                {
+                    Debug.LogError("wow, some serius error just occured during the render process of a chunk, and damn you gotta love my error messages");
+                }
 
-            return this;
+                return this;
+            }
+        }
+        else
+        {
+            return null;
         }
     }
 

@@ -12,7 +12,10 @@ public class BlockData
         air, grass, stone, dirt, emeraldOre
     }
     public enum Direction { north, east, south, west, up, down };
-
+    
+    //texture variables
+    public struct Tile { public int x; public int y;}
+    const float tileSize = 0.25f; //space between tiles. eg 1 (picture) /4(pictures adjacent) = 0.25f per picture
 
     public BlockData(BlockType type, Vector3 pos)
     {
@@ -84,6 +87,55 @@ public class BlockData
     }
 
     #region add data about the different faces of the block
+    public virtual Vector2[] FaceUVs(Direction direction)
+    {
+        Vector2[] UVs = new Vector2[4];
+        Tile tilePos = TexturePosition(direction);
+
+        UVs[0] = new Vector2(tileSize * tilePos.x + tileSize,
+            tileSize * tilePos.y);
+        UVs[1] = new Vector2(tileSize * tilePos.x + tileSize,
+            tileSize * tilePos.y + tileSize);
+        UVs[2] = new Vector2(tileSize * tilePos.x,
+            tileSize * tilePos.y + tileSize);
+        UVs[3] = new Vector2(tileSize * tilePos.x,
+            tileSize * tilePos.y);
+
+        return UVs;
+    }
+    public virtual Tile TexturePosition(Direction direction)
+    {
+        Tile tile = new Tile();
+        tile.x = 0;
+        tile.y = 0;
+
+        switch (type)
+        {
+            case BlockType.dirt:
+                tile.x = 1;
+                break;
+            case BlockType.emeraldOre:
+                tile.x = 2;
+                tile.y = 3;
+                break;
+            case BlockType.grass:
+                switch (direction)
+                {
+                    case Direction.up:
+                        tile.x = 2;
+                        break;
+                    case Direction.down:
+                        tile.x = 1;
+                        break;
+                    default:
+                        tile.x = 3;
+                        break;
+                }
+                break;
+        } 
+        
+        return tile;
+    }
 
     protected virtual MeshData FaceDataUp(ChunkGenerator chunk, int x, int y, int z, MeshData meshData)
     {
@@ -93,7 +145,7 @@ public class BlockData
         meshData.AddVertex(new Vector3(x - 0.5f, y + 0.5f, z - 0.5f));
 
         meshData.AddQuadTriangles();
-        //meshData.uv.AddRange(new Vector2(Direction.up));
+        meshData.uv.AddRange(FaceUVs(Direction.up));
         return meshData;
     }
 
@@ -105,7 +157,7 @@ public class BlockData
         meshData.AddVertex(new Vector3(x - 0.5f, y - 0.5f, z + 0.5f));
 
         meshData.AddQuadTriangles();
-        //meshData.uv.AddRange(FaceUVs(Direction.down));
+        meshData.uv.AddRange(FaceUVs(Direction.down));
         return meshData;
     }
 
@@ -117,7 +169,7 @@ public class BlockData
         meshData.AddVertex(new Vector3(x - 0.5f, y - 0.5f, z + 0.5f));
 
         meshData.AddQuadTriangles();
-        //meshData.uv.AddRange(FaceUVs(Direction.north));
+        meshData.uv.AddRange(FaceUVs(Direction.north));
         return meshData;
     }
 
@@ -129,7 +181,7 @@ public class BlockData
         meshData.AddVertex(new Vector3(x + 0.5f, y - 0.5f, z + 0.5f));
 
         meshData.AddQuadTriangles();
-        //meshData.uv.AddRange(FaceUVs(Direction.east));
+        meshData.uv.AddRange(FaceUVs(Direction.east));
         return meshData;
     }
 
@@ -141,7 +193,7 @@ public class BlockData
         meshData.AddVertex(new Vector3(x + 0.5f, y - 0.5f, z - 0.5f));
 
         meshData.AddQuadTriangles();
-        //meshData.uv.AddRange(FaceUVs(Direction.south));
+        meshData.uv.AddRange(FaceUVs(Direction.south));
         return meshData;
     }
 
@@ -153,7 +205,7 @@ public class BlockData
         meshData.AddVertex(new Vector3(x - 0.5f, y - 0.5f, z - 0.5f));
 
         meshData.AddQuadTriangles();
-        //meshData.uv.AddRange(FaceUVs(Direction.west));
+        meshData.uv.AddRange(FaceUVs(Direction.west));
         return meshData;
     }
     #endregion

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(ChunkGenerator))]
 public class ChunkDestroyer : MonoBehaviour {
     public float timeframe = 10f;
 
@@ -20,6 +21,13 @@ public class ChunkDestroyer : MonoBehaviour {
     void Destroy()
     {
         CancelInvoke(); //safe guard to make sure it only destroys once
+        ChunkGenerator CG = GetComponent<ChunkGenerator>();
+        Vector3 v = CG.actualChunkCoords;
+        int x = (int)v.x / CG.GetChunkSize();
+        int z = (int)v.z / CG.GetChunkSize();
+        ChunkPos CP = new ChunkPos(x, z);
+
+        GetComponentInParent<WorldGenerator>().chunkDictionary.Remove(CP);
         Destroy(gameObject);
     }
 }
