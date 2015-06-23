@@ -4,12 +4,9 @@ using System.Collections;
 //note, this doesn't extend MonoBehaviour, thats on purpose, it doesn't need it
 public class BlockData
 {
-    public bool visibility;
-    public bool isSpawned;
     public BlockType type;
     public Vector3 position;
-    public bool isAnActualBlock;
-
+    
     public enum BlockType
     {
         air, grass, stone, dirt, emeraldOre
@@ -17,14 +14,12 @@ public class BlockData
     public enum Direction { north, east, south, west, up, down };
 
 
-    public BlockData(bool visibility, BlockType type, Vector3 pos, bool block)
+    public BlockData(BlockType type, Vector3 pos)
     {
-        this.visibility = visibility;
         this.type = type;
-        isSpawned = false;
         position = pos;
-        isAnActualBlock = block;
     }
+
     public virtual bool IsSolid(Direction direction)
     {
         if (type != BlockType.air)

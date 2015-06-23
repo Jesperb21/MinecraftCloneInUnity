@@ -37,6 +37,10 @@ public class WorldGenerator : MonoBehaviour
     private bool DimensionActive;
     private bool updatingWorld;
 
+    public int spiralsInProgress = 0;
+
+    public bool loadedUp = true;//pre-loading the map didn't help the rendering speed
+
     // Use this for initialization
     void Start()
     {
@@ -79,7 +83,8 @@ public class WorldGenerator : MonoBehaviour
         {
             PlayerPosHasChanged = false;
             Debug.Log("world generation has been restarted");
-            StartCoroutine(GenerateChunksOverTime()); // <--------------- start generating new chunks
+            spiralsInProgress++;
+            StartCoroutine(GenerateChunksInASpiral()); // <--------------- start generating new chunks
         }
         else if //if the players position has changed away from the position stored in PlayerPos 
             (player &&
@@ -99,10 +104,11 @@ public class WorldGenerator : MonoBehaviour
         updatingWorld = false;
     }
 
-    IEnumerator GenerateChunksOverTime()
+    IEnumerator GenerateChunksInASpiral()
     {
         generatingWorld = true;
         Vector3 playerPos = player.transform.position;
+        //position of the player in "Chunk coords"
         int playerChunkXPos = (int)(playerPos.x / chunkSize);
         int playerChunkZPos = (int)(playerPos.z / chunkSize);
         
@@ -114,6 +120,7 @@ public class WorldGenerator : MonoBehaviour
         //loop that every time it runs through changes direction, every 2nd time it runs through adds another block to the end of the line, 
         //and every 4th time ( thisloop/2 ) knows its made another layer
         //this results in something like http://gyazo.com/c8daf4c2a000e11d4ac004e00d9ad21b ... hopefully
+        //gif from before fuckup #86 http://gyazo.com/1d8ffa8b586a99576c44f41491146eee
         for (int thisLoop = 0; (thisLoop/2) <= radiusToGenerateAroundPlayer; )
         {
 
@@ -126,7 +133,11 @@ public class WorldGenerator : MonoBehaviour
                 {
                     yield return new WaitForEndOfFrame();
                 }
-                    CreateChunk((int)loopPos.x, (int)loopPos.y);
+                ChunkPos pos = new ChunkPos((int)loopPos.x, (int)loopPos.y);
+                if (loadedUp)// load the world up before rendering
+                    CreateChunkAndRender(pos);
+                else
+                    CreateChunk(pos);
 
                     yield return new WaitForEndOfFrame();
                 
@@ -167,56 +178,41 @@ public class WorldGenerator : MonoBehaviour
                 addAnotherIteration = true;
             }
 
-            //switch direction
+            //switch direction of the loop
             if ((int)currentDir == 3)
                 currentDir = 0;
             else
                 currentDir++;
         }
-        #region square chunk generation
-        /*
-            for (int x = playerChunkXPos - radiusToGenerateAroundPlayer; x <= playerChunkXPos + radiusToGenerateAroundPlayer; x++)
-            {
-                for (int z = playerChunkZPos - radiusToGenerateAroundPlayer; z <= playerChunkZPos + radiusToGenerateAroundPlayer; z++)
-                {
-                    while (generatingChunk)
-                    {
-                        //yield return new WaitForSeconds(5f);//wait 5 sec between chunks
-                        yield return new WaitForEndOfFrame(); //only wait till next frame between chunks
-                    }
-                    if (!transform.Find("chunk_x" + x + "_z" + z))//dont generate the same chunk twice
-                    {
-                        GameObject chunk = new GameObject("chunk_x" + x + "_z" + z);
-                        chunk.tag = "Chunk";
-                        chunk.transform.parent = transform;
-                        chunk.transform.position = new Vector3(x * chunkSize, 0f, z * chunkSize);
-
-                        int actualChunkX = x * chunkSize;
-                        int actualChunkZ = z * chunkSize;
-
-                        StartCoroutine(CreateChunksOverTime(actualChunkX, actualChunkZ, chunk));
-                    }
-                }
-            }
-        */
-        #endregion
         deleteOldChunks(playerChunkXPos, playerChunkZPos);
 
         yield return new WaitForSeconds(1f); //when the world has been generated around the player wait for a second before attempting to create it again
+        if (!loadedUp)
+            PlayerPosHasChanged = true;//make it re-run the loadworld when the map has been generated
+
+        loadedUp = true;
         generatingWorld = false;
     }
+
+    /// <summary>
+    /// create and render the chunk
+    /// </summary>
+    /// <param name="pos">position of the chunk to create & render</param>
+    public void CreateChunkAndRender(ChunkPos pos)
+    {
+        CreateChunk(pos);
+        StartCoroutine(RenderChunk(pos));
+    }
+
 
     //note i dont want this to be a co-routine because... well... its fairly simple
     /// <summary>
     /// create a chunk if it doesn't exist
     /// </summary>
-    /// <param name="x">X position of the chunk, note that this uses "chunk coords", so before you call it you will have to use (int)x/chunkSize</param>
-    /// <param name="z">Z position of the chunk, note that this uses "chunk coords", so before you call it you will have to use (int)z/chunkSize</param>
-    /// <param name="spawn">wether or not to instantiate the object, default = true</param>
-    public void CreateChunk(int x, int z, bool spawn = true)
+    /// <param name="pos">position of the chunk</param>
+    public void CreateChunk(ChunkPos pos)
     {
         ChunkGenerator chunkGen = null;
-        ChunkPos pos = new ChunkPos(x,z);
 
         chunkDictionary.TryGetValue(pos, out chunkGen);
 
@@ -226,52 +222,85 @@ public class WorldGenerator : MonoBehaviour
 
             //instantiate a chunk at the calculated position
             
-            GameObject chunkObj = (GameObject)Instantiate(chunk, new Vector3(x * chunkSize, 0f, z * chunkSize), Quaternion.identity);
+            GameObject chunkObj = (GameObject)Instantiate(chunk, new Vector3(pos.x * chunkSize, 0f, pos.z * chunkSize), Quaternion.identity);
             chunkObj.transform.parent = transform;
 
-            int actualChunkX = x * chunkSize;
-            int actualChunkZ = z * chunkSize;
+            int actualChunkX = pos.x * chunkSize;
+            int actualChunkZ = pos.z * chunkSize;
 
             //add the chunk object spawned to the dictionary... well the ChunkGenerator script part of the object anyways
             chunkDictionary.Add(pos, chunkObj.GetComponent<ChunkGenerator>());
-            if(spawn)
-                chunkObj.GetComponent<ChunkGenerator>().init(chunkSize, actualChunkX, actualChunkZ);
             
-            chunkObj.name = "chunk_x" + x + "_z" + z; // set the name property to know where it is in the world through the inspector
+            chunkObj.GetComponent<ChunkGenerator>().init(chunkSize, actualChunkX, actualChunkZ);
 
+            chunkObj.name = "chunk_x" + pos.x + "_z" + pos.z; // set the name property to know where it is in the world through the inspector
+//            Debug.Log("derped out around here, name:" + chunkObj.name);
         }
     }
 
+    /// <summary>
+    /// render the chunk at the given position, this assumes that the chunk has been generated beforehand, 
+    /// if not it will call CreateChunk on it... as a safeguard...
+    /// and it will create the chunks on each side of this, to be able to render the edges of this chunk properly
+    /// </summary>
+    /// <param name="pos">position of the chunk</param>
+    public IEnumerator RenderChunk(ChunkPos pos)
+    {
+        ChunkGenerator chunk = null;
+        chunkDictionary.TryGetValue(pos, out chunk);
+
+        if (chunk == null)
+        {
+            CreateChunk(pos);
+            chunkDictionary.TryGetValue(pos, out chunk);
+        }
+        
+        //generate the chunks on each side of the chunk, no need to render them, just generate, this is needed to calculate the edges of a chunk
+        List<ChunkPos> positionsAroundTheChunk = new List<ChunkPos>();//why a list? why not, faster than arrays, and pretty syntax
+        
+        positionsAroundTheChunk.Add(new ChunkPos(pos.x+1, pos.z));
+        positionsAroundTheChunk.Add(new ChunkPos(pos.x-1, pos.z));
+        positionsAroundTheChunk.Add(new ChunkPos(pos.x, pos.z+1));
+        positionsAroundTheChunk.Add(new ChunkPos(pos.x, pos.z-1));
+        
+        
+        foreach (ChunkPos posToGen in positionsAroundTheChunk)
+        {
+            //make a new thread for each chunk needed to be generated
+            CreateChunk(posToGen);
+        }
+
+
+        yield return new WaitForSeconds(0.5f); //wait a short while 
+        chunk.Render();
+    }
 
     //should probably remake this function to use the dictionary instead, but it works for now
     //deletes chunks that got out of the range of the player
     void deleteOldChunks(int playerChunkXPos, int playerChunkZPos)
     {
-        for (int i = 0; i < transform.childCount; i++)
+        foreach (KeyValuePair<ChunkPos,ChunkGenerator> chunk in chunkDictionary)
         {
-            GameObject obj = transform.GetChild(i).gameObject;
-            if (obj.tag == "Chunk")
+
+            GameObject obj = chunk.Value.gameObject;
+            ChunkPos pos = chunk.Key;
+            bool breakIt = true;
+
+            //the spiral loop generates a bit more than the radiusToGenerateAroundPlayer allows, so added a +2 modifier to it when removing
+            //stuff still gets rmeoved, and this way when the player runs back and forth a bit it doesnt have to generate entirely new chunks 
+            //time he gets out of the range of chunks..
+            //should probably look into why it does that, later, its of no immediate concern.  
+            if ((pos.x >= playerChunkXPos - radiusToGenerateAroundPlayer - 2 && pos.x <= playerChunkXPos + radiusToGenerateAroundPlayer + 2))
             {
-                int x = (int)obj.transform.position.x / chunkSize;
-                int z = (int)obj.transform.position.z / chunkSize;
-                bool breakIt = true;
-                
-                //the spiral loop generates a bit more than the radiusToGenerateAroundPlayer allows, so added a +2 modifier to it when removing
-                //stuff still gets rmeoved, and this way when the player runs back and forth a bit it doesnt have to generate entirely new chunks 
-                //time he gets out of the range of chunks...  
-                if ((x >= playerChunkXPos - radiusToGenerateAroundPlayer -2 && x <= playerChunkXPos + radiusToGenerateAroundPlayer +2))
+                if ((pos.z >= playerChunkZPos - radiusToGenerateAroundPlayer - 2 && pos.z <= playerChunkZPos + radiusToGenerateAroundPlayer + 2))
                 {
-                    if ((z >= playerChunkZPos - radiusToGenerateAroundPlayer -2&& z <= playerChunkZPos + radiusToGenerateAroundPlayer +2))
-                    {
-                        breakIt = false;
-                    }
+                    breakIt = false;
                 }
-
-                if (breakIt)
-                    obj.SetActive(false);
-                    //Destroy(obj);
-
             }
+
+            if (breakIt)
+                obj.SetActive(false); // set the chunk as inactive, the "object pooling"-ish methods of ChunkDestroyer will take care of the rest
+
         }
     }
     
