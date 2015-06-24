@@ -50,6 +50,7 @@ public class BlockData
     {
         if (type != BlockType.air)
         {
+            /*
             switch (direction)
             {
                 case Direction.north:
@@ -64,7 +65,8 @@ public class BlockData
                     return true;
                 case Direction.down:
                     return true;
-            }
+            }*/
+            return true;
         }
         return false;
     }
@@ -162,6 +164,7 @@ public class BlockData
 
     protected virtual MeshData FaceDataUp(ChunkGenerator chunk, int x, int y, int z, MeshData meshData)
     {
+
         meshData.AddVertex(new Vector3(x - 0.5f, y + 0.5f, z + 0.5f));
         meshData.AddVertex(new Vector3(x + 0.5f, y + 0.5f, z + 0.5f));
         meshData.AddVertex(new Vector3(x + 0.5f, y + 0.5f, z - 0.5f));

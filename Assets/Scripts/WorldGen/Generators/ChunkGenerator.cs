@@ -29,6 +29,10 @@ public class ChunkGenerator : MonoBehaviour {
 
     private MeshFilter filter;
     private MeshCollider collider;
+    private WorldGenerator WG;//increased rendering speed by almost 10%
+
+    private BlockData solid;
+    private int tallestPoint;
 
     private int chunkSize;
     private List<Thread> chunkColumnThreads = new List<Thread>();
@@ -45,11 +49,15 @@ public class ChunkGenerator : MonoBehaviour {
     #region creation of the chunk
     public void init(int chunkSize, int actualChunkX, int actualChunkZ, bool generateColumnsPerFrame = false)
     {
+        tallestPoint = 0;
+        solid = new BlockData(BlockData.BlockType.stone, new Vector3());
 
         this.chunkSize = chunkSize;
         actualChunkCoords = new ChunkPos(actualChunkX, actualChunkZ);
         filter = gameObject.GetComponent<MeshFilter>();
         collider = gameObject.GetComponent<MeshCollider>();
+
+        WG = GetComponentInParent<WorldGenerator>();
 
         bool loaded = WorldSaver.LoadChunk(this);
         if (!loaded)
@@ -119,18 +127,18 @@ public class ChunkGenerator : MonoBehaviour {
 
 
                 //make a new thread to calculate StoneHeightBorder...
-                Thread t = new Thread(() =>
-                {
+                //Thread t = new Thread(() =>
+                //{
                     stoneHeightBorder = SimplexNoise(_X, 100, _Z, 10, 3, 1.2f);//controls "hills" in the stone
                     stoneHeightBorder += SimplexNoise(_X, 300, _Z, 20, 2, 0) + 10; // controls the main levels of stone
 
-                });
-                t.Start();
+                //});
+                //t.Start();
                 //while waiting for this line to be calculated (which is probably faster)
                 int dirtHeightBorder = SimplexNoise(_X, 10, _Z, 80, 10, 0.9f) + 10;
                 //int dirtHeightBorder = SimplexNoise((x + actualChunkX), 40, (z + actualChunkZ), 80, 10, 0) + 3;
                 //and then joining them together
-                t.Join();
+                //t.Join();
 
                 //this is all done to because both calculations are some fairly heavy calculations, doing them this way seperates them 
                 //out onto different CPU cores... probably not any noticeable performance increase... i get the feeling it would actually
@@ -149,6 +157,9 @@ public class ChunkGenerator : MonoBehaviour {
 
                 if (dirtHeightBorder < 1)
                     dirtHeightBorder = 1;
+
+                if (stoneHeightBorder + dirtHeightBorder + 1 > tallestPoint)
+                    tallestPoint = stoneHeightBorder + dirtHeightBorder + 1;
 
                 CalculateChunkColumn(stoneHeightBorder, dirtHeightBorder, (x + actualChunkX), (z + actualChunkZ));
 
@@ -178,54 +189,54 @@ public class ChunkGenerator : MonoBehaviour {
     /// <param name="z">z position of the column</param>
     private void CalculateChunkColumn(int stoneHeightBorder, int dirtHeightBorder, int x, int z)
     {
-        Thread th = new Thread(() =>
+        /*Thread th = new Thread(() =>
+            {*/
+        BlockData.BlockType objToMake = BlockData.BlockType.stone; //default
+        bool generate = false;
+        int y = stoneHeightBorder + dirtHeightBorder + 1;
+
+        while (y > 0)
+        {
+            if (y <= stoneHeightBorder)
             {
-                BlockData.BlockType objToMake = BlockData.BlockType.stone; //default
-                bool generate = false;
-                int y = stoneHeightBorder + dirtHeightBorder + 1;
+                objToMake = BlockData.BlockType.stone;
+                #region ore gen, should be its own function really, but meh, later
+                float f = SimplexNoiseFloat(x, y, z, 10, 2, 0);
+                //1.7 seems reasonable for iron or coal veins
+                //the closer to 2 the rarer stuff is
+                //1.94 seems the highest rarity generated in a 3x3 area of chunks with a chunksize of 32
+                //that might be usefull for diamonds, and 1.95 for emeralds
 
-                while (y > 0)
+                if (f > 1.9)
                 {
-                    if (y <= stoneHeightBorder)
-                    {
-                        objToMake = BlockData.BlockType.stone;
-                        #region ore gen, should be its own function really, but meh, later
-                        float f = SimplexNoiseFloat(x, y, z, 10, 2, 0);
-                        //1.7 seems reasonable for iron or coal veins
-                        //the closer to 2 the rarer stuff is
-                        //1.94 seems the highest rarity generated in a 3x3 area of chunks with a chunksize of 32
-                        //that might be usefull for diamonds, and 1.95 for emeralds
-
-                        if (f > 1.9)
-                        {
-                            objToMake = BlockData.BlockType.emeraldOre;
-                        }
-                        #endregion
-                        generate = true;
-                    }
-                    else if (y <= stoneHeightBorder + dirtHeightBorder)
-                    {
-                        objToMake = BlockData.BlockType.dirt;
-                        generate = true;
-                    }
-                    else if (y <= stoneHeightBorder + dirtHeightBorder + 1)
-                    {
-                        objToMake = BlockData.BlockType.grass;
-                        generate = true;
-                    }
-                    else
-                    {
-                        generate = false;
-                    }
-
-                    int _x = Mathf.Abs(x % chunkSize);
-                    int _z = Mathf.Abs(z % chunkSize);
-                    Blocks[_x, y, _z] = new BlockData(objToMake, new Vector3(x, y, z));
-                    y--;
-
+                    objToMake = BlockData.BlockType.emeraldOre;
                 }
-            });
-        th.Start();
+                #endregion
+                generate = true;
+            }
+            else if (y <= stoneHeightBorder + dirtHeightBorder)
+            {
+                objToMake = BlockData.BlockType.dirt;
+                generate = true;
+            }
+            else if (y <= stoneHeightBorder + dirtHeightBorder + 1)
+            {
+                objToMake = BlockData.BlockType.grass;
+                generate = true;
+            }
+            else
+            {
+                generate = false;
+            }
+
+            int _x = Mathf.Abs(x % chunkSize);
+            int _z = Mathf.Abs(z % chunkSize);
+            Blocks[_x, y, _z] = new BlockData(objToMake, new Vector3(x, y, z));
+            y--;
+
+        }
+        //    });
+        //th.Start();
     }
     
     #endregion
@@ -247,7 +258,8 @@ public class ChunkGenerator : MonoBehaviour {
         {
             for (int z = 0; z < chunkSize; z++)
             {
-                for (int y = 0; y < airLimit; y++)
+
+                for (int y = 0; y <= tallestPoint; y++)
                 {
                     meshData = Blocks[x, y, z].Blockdata(this, x, y, z, meshData);
 
@@ -263,28 +275,19 @@ public class ChunkGenerator : MonoBehaviour {
         if (this != null && filter != null && collider != null)
         {
             filter.mesh.Clear();
-
-            //collider.enabled = false;
-
-            if (collider.sharedMesh != null)
-            {
-                collider.sharedMesh.Clear();
-            }
             filter.mesh.vertices = meshdata.vertices.ToArray();
             filter.mesh.triangles = meshdata.triangles.ToArray();
 
             filter.mesh.uv = meshdata.uv.ToArray();
-
             filter.mesh.RecalculateNormals();
-            filter.mesh.RecalculateBounds();
-            filter.mesh.Optimize();
 
-            collider.sharedMesh = filter.mesh;
-            
-            collider.sharedMesh.RecalculateNormals();
-            collider.sharedMesh.RecalculateBounds();
-            collider.sharedMesh.Optimize();
-            //collider.enabled = true;
+            collider.sharedMesh = null;
+            Mesh mesh = new Mesh();
+            mesh.vertices = meshdata.vertices.ToArray();
+            mesh.triangles = meshdata.triangles.ToArray();
+            mesh.RecalculateNormals();
+
+            collider.sharedMesh = mesh;
         }
     }
 
@@ -295,6 +298,7 @@ public class ChunkGenerator : MonoBehaviour {
     {
         Blocks[x%chunkSize, y, z%chunkSize].type = BlockData.BlockType.air;
         Render();
+        WorldSaver.SaveChunk(this);
     }
 
     #endregion
@@ -307,11 +311,11 @@ public class ChunkGenerator : MonoBehaviour {
 
     public ChunkGenerator getChunk(int x, int z)
     {
-        int chunkX = (int)((x+actualChunkCoords.x) /chunkSize);
-        int chunkZ = ((int)(z+actualChunkCoords.z) / chunkSize);
         if (this != null)
         {
-            WorldGenerator WG = transform.GetComponentInParent<WorldGenerator>();
+            int chunkX = (int)((x+actualChunkCoords.x) /chunkSize);
+            int chunkZ = (int)((z+actualChunkCoords.z) / chunkSize);
+        
             ChunkGenerator CG = null;
 
             WG.chunkDictionary.TryGetValue(new ChunkPos(chunkX, chunkZ), out CG);
@@ -320,46 +324,40 @@ public class ChunkGenerator : MonoBehaviour {
             {
                 return CG;
             }
-            else
-            {
-                WG.CreateChunk(new ChunkPos(chunkX, chunkZ));
-                WG.chunkDictionary.TryGetValue(new ChunkPos(chunkX, chunkZ), out CG);
-                if (CG != null)
-                {
-                    return CG;
-                }
-                else
-                {
-                    Debug.LogError("wow, some serius error just occured during the render process of a chunk, and damn you gotta love my error messages");
-                }
 
-                return this;
-            }
         }
-        else
-        {
-            return null;
-        }
+        return null;
     }
 
 
     public BlockData getBlockAt(int x, int y, int z)
     {
-        int _x = Mathf.Abs(x % chunkSize);
-        int _z = Mathf.Abs(z % chunkSize);
         
+
         //if at the bottom of the game
         if (y < 0)
         {
-            return new BlockData(BlockData.BlockType.air, new Vector3(x, y, z));
+            return solid;
         }
         else if (y >= airLimit)//if at the air limit of the game
         {
-            return new BlockData(BlockData.BlockType.air, new Vector3(x, y, z));
+            return solid;
         }
-        
 
-        
+
+        if (x >= 0 && z >= 0)
+        {
+            if (x < chunkSize && z < chunkSize)
+            {
+                if (this != null)
+                {
+                    int _x = Mathf.Abs(x % chunkSize);
+                    int _z = Mathf.Abs(z % chunkSize);
+
+                    return Blocks[_x, y, _z];
+                }
+            }
+        }
 
 
         //get the chunk at the specified position //returns this if the block is in this chunk
@@ -367,11 +365,13 @@ public class ChunkGenerator : MonoBehaviour {
         
         if (CG != null)
         {
+            int _x = Mathf.Abs(x % chunkSize);
+            int _z = Mathf.Abs(z % chunkSize);
             return CG.Blocks[_x, y, _z]; 
         }
         else //if the chunk wasn't found just return an airblock
         {
-            return new BlockData(BlockData.BlockType.air, new Vector3(x, y, z));
+            return solid;
         }
     }
 

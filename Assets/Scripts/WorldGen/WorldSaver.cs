@@ -38,7 +38,7 @@ public static class WorldSaver {
 
 
     public static void SaveChunk(ChunkGenerator Chunk)
-    {
+    {/*
         string saveFile = SaveLocation(worldName);
         ChunkPos CP = new ChunkPos((int)Chunk.actualChunkCoords.x / Chunk.GetChunkSize(), (int)Chunk.actualChunkCoords.z / Chunk.GetChunkSize());
         saveFile += saveFileName(CP);
@@ -48,11 +48,13 @@ public static class WorldSaver {
 
         formatter.Serialize(stream, Chunk.Blocks);
 
-        stream.Close();//always close the stream! always!
+        stream.Close();//always close the stream! always!*/
     }
 
     public static bool LoadChunk(ChunkGenerator Chunk)
     {
+        return false;
+        /*
         string saveFile = SaveLocation(worldName);
         ChunkPos CP = new ChunkPos((int)Chunk.actualChunkCoords.x / Chunk.GetChunkSize(), (int)Chunk.actualChunkCoords.z / Chunk.GetChunkSize());
         saveFile += saveFileName(CP);
@@ -69,7 +71,7 @@ public static class WorldSaver {
         Chunk.Blocks = (BlockData[, ,])formatter.Deserialize(stream);
 
         stream.Close(); //always close the stream! always!
-        return true;
+        return true;*/
     }
 
 }
