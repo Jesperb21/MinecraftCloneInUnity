@@ -49,6 +49,10 @@ public class WorldGenerator : MonoBehaviour
         if (transform.Find("Player"))
         {
             player = transform.Find("Player").gameObject;
+            
+            player.transform.position = new Vector3(
+                    UnityEngine.Random.Range(100,5000), player.transform.position.y, UnityEngine.Random.Range(100,5000)                
+                );
         }
         else
         {
