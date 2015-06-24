@@ -26,7 +26,7 @@ public class BlockData
     
     public enum BlockType
     {
-        air, grass, stone, dirt, emeraldOre
+        air, stone, dirt, grass, coalOre, lapisLazuliOre, emeraldOre, goldOre, redstoneOre, ironOre, tinOre
     }
     public enum Direction { north, east, south, west, up, down };
     
@@ -156,6 +156,28 @@ public class BlockData
                         tile.x = 3;
                         break;
                 }
+                break;
+            case BlockType.coalOre:
+                tile.y = 3;
+                break;
+            case BlockType.lapisLazuliOre:
+                tile.y = 3;
+                tile.x = 1;
+                break;
+            case BlockType.goldOre:
+                tile.y = 3;
+                tile.x = 3;
+                break;
+            case BlockType.redstoneOre:
+                tile.y = 2;
+                break;
+            case BlockType.tinOre:
+                tile.x = 1;
+                tile.y = 2;
+                break;
+            case BlockType.ironOre:
+                tile.x = 2;
+                tile.y = 2;
                 break;
         } 
         
