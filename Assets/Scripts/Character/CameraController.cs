@@ -10,6 +10,7 @@ public class CameraController : MonoBehaviour
     private float maxAngle = 90;
     private float minAngle = -90;
 
+
     void Start()
     {
         //maxAngle = -maxAngle;
@@ -19,19 +20,22 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        
         //lock mouse and make it invisible
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+           Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
 
-        for (int i = 0; i < transform.childCount; i++)
-        {
-            GameObject child = transform.GetChild(i).gameObject;
-            if (child.GetComponent<Camera>())
+            for (int i = 0; i < transform.childCount; i++)
             {
-                RotateCamera(child);
-                ZoomCamera(child);
-            }
-        }
+                GameObject child = transform.GetChild(i).gameObject;
+                if (child.GetComponent<Camera>())
+                {
+                    RotateCamera(child);
+                    ZoomCamera(child);
+                }
+            } 
+        
+        
     }
 
     void ZoomCamera(GameObject cam)

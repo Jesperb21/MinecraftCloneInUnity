@@ -24,22 +24,22 @@ public class GameController : MonoBehaviour {
     private string topPath = string.Empty;
     private string sidePath = string.Empty;
 
-    public GameObject MakeCube(string tag)
+    public GameObject MakeCube(string name)
     {
         GameObject NewCube;
-        Transform[] allchilden;
+        //Transform[] allchilden;
 
         NewCube = (GameObject)Instantiate(cube, new Vector3((Random.Range(-5, 5)), (Random.Range(-5, 5)), (Random.Range(-5, 5))), Quaternion.identity);
-        NewCube.gameObject.tag = tag;
-        allchilden = NewCube.gameObject.GetComponentsInChildren<Transform>();
+        NewCube.gameObject.name = name;
+        //allchilden = NewCube.gameObject.GetComponentsInChildren<Transform>();
 
-        foreach (Transform child in allchilden)
+        /*foreach (Transform child in allchilden)
         {
-            child.gameObject.tag = tag;
-        }
-        NewCube.gameObject.tag = tag;
+            child.gameObject.name = name;
+        }*/
+       // NewCube.gameObject.name = name;
 
-        GetTextures(NewCube.tag);
+        GetTextures(NewCube.name);
 
         if (bottomPath != string.Empty && topPath != string.Empty && sidePath != string.Empty)
         {
@@ -73,13 +73,14 @@ public class GameController : MonoBehaviour {
            /* Debug.Log("venter på children");
             foreach (Transform child in allchilden)
             {
+                
                 child.GetComponent<Renderer>().material.mainTexture = Bottom;
             }*/
         }
         return NewCube;
     }
 
-    void GetTextures(string cubeTag)
+    void GetTextures(string cubeName)
     {
         //TextAsset asset = (TextAsset)Resources.Load("XmlBlocks");
         // string datafilecontent = asset.text;
@@ -90,7 +91,7 @@ public class GameController : MonoBehaviour {
 
         foreach (XmlElement child in xmlDoc.SelectNodes("blocks/block"))
         {
-            if (child.SelectSingleNode("name").InnerXml == cubeTag)
+            if (child.SelectSingleNode("name").InnerXml == cubeName)
             {
                 foreach (XmlElement item in child.SelectNodes("Textures"))
                 {
@@ -118,6 +119,7 @@ public class GameController : MonoBehaviour {
     }
 
 	void Start () {
+
 
 	}
 
