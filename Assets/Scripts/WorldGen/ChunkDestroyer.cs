@@ -22,7 +22,7 @@ public class ChunkDestroyer : MonoBehaviour {
     {
         CancelInvoke(); //safe guard to make sure it only destroys once
         ChunkGenerator CG = GetComponent<ChunkGenerator>();
-        Vector3 v = CG.actualChunkCoords;
+        ChunkPos v = CG.actualChunkCoords;
         int x = (int)v.x / CG.GetChunkSize();
         int z = (int)v.z / CG.GetChunkSize();
         ChunkPos CP = new ChunkPos(x, z);

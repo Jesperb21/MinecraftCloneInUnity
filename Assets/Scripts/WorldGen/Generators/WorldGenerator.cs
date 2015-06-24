@@ -99,7 +99,7 @@ public class WorldGenerator : MonoBehaviour
         }
         else
         {
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(5f);
         }
         updatingWorld = false;
     }
@@ -162,6 +162,7 @@ public class WorldGenerator : MonoBehaviour
                         loopPos.y++;
                         break;
                 }
+                //yield return new WaitForSeconds(0.2f);
                 yield return new WaitForEndOfFrame();
             }
 
@@ -202,6 +203,7 @@ public class WorldGenerator : MonoBehaviour
     {
         CreateChunk(pos);
         StartCoroutine(RenderChunk(pos));
+        
     }
 
 

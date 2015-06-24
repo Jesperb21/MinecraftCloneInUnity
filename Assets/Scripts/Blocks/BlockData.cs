@@ -1,11 +1,28 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 //note, this doesn't extend MonoBehaviour, thats on purpose, it doesn't need it
+[Serializable]//serializable so it can be serialized into a file
 public class BlockData
 {
     public BlockType type;
-    public Vector3 position;
+
+    //vector 3 surrogate, vector 3 wasn't serializable, so couldn't be saved
+    [Serializable]
+    public struct coordinates
+    {
+        public float x; 
+        public float y; 
+        public float z;
+
+        public coordinates(float x, float y, float z){
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    };
+    public coordinates position;
     
     public enum BlockType
     {
@@ -20,7 +37,13 @@ public class BlockData
     public BlockData(BlockType type, Vector3 pos)
     {
         this.type = type;
-        position = pos;
+        position.x = pos.x;
+        position.y = pos.y;
+        position.z = pos.z;
+    }
+    public BlockData()
+    {
+        type = BlockType.air;
     }
 
     public virtual bool IsSolid(Direction direction)
