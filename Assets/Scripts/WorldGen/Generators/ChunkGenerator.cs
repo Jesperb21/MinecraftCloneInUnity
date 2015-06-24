@@ -202,47 +202,46 @@ public class ChunkGenerator : MonoBehaviour {
                 objToMake = BlockData.BlockType.stone;
                 #region ore gen, should be its own function really, but meh, later
 
-                float f0 = SimplexNoiseFloat(x, y, z, 0.025f, 100, 0);
-                float f1 = SimplexNoiseFloat(x, y, z, 0.020f, 100, 0);
-                float f2 = SimplexNoiseFloat(x, y, z, 0.013f, 100, 0);
-                float f3 = SimplexNoiseFloat(x, y, z, 0.010f, 100, 0);
+                float f0 = SimplexNoiseFloat(x, y, z, 0.075f, 100, 0);
+                float f1 = SimplexNoiseFloat(x, y, z, 0.070f, 100, 0);
+                float f2 = SimplexNoiseFloat(x, y, z, 0.063f, 100, 0);
                 
-                float v0 = SimplexNoiseFloat(x, y, z, 0.010f, 125, 0);
-                float v1 = SimplexNoiseFloat(x, y, z, 0.011f, 135, 0);
-                float v2 = SimplexNoiseFloat(x, y, z, 0.012f, 145, 0);
+                float v0 = SimplexNoiseFloat(x, y, z, 0.075f, 25, 0);
+                float v1 = SimplexNoiseFloat(x, y, z, 0.070f, 25, 0);
+                float v2 = SimplexNoiseFloat(x, y, z, 0.063f, 25, 0);
 
-                //1.7 seems reasonable for iron or coal veins
-                //the closer to 2 the rarer stuff is
-                //1.94 seems the highest rarity generated in a 3x3 area of chunks with a chunksize of 32
-                //that might be usefull for diamonds, and 1.95 for emeralds
-
+                //toy with the 4th value to increase / decrease rarity, lower values = larger veins, higher values = more veins that are smaller
+                //toy with the 5th value to increase / decrease size; 5th value on v0,v1 & v2 adjusts the size, lower values = smaller more rare veins
+                //larger values = bigger veins; 25 seems reasonable, makes nice veins of coal ore
 
                 //wow i should really make this section a switch / case instead X_X
-                if (f0 > v0+4)
+                //but this really needs to be loaded through xml / json instead, and probably some better location algorithm than this?
+                //but this does indeed make some nice looking veins of ores, so... if we had a week more, maybe it'd be better, but we dont 
+                if (f0 < v0)//v0+4)
                 {
                     objToMake = BlockData.BlockType.emeraldOre;
                 }
-                else if (f0 > v1+5)
+                else if (f0 < v1)
                 {
                     objToMake = BlockData.BlockType.lapisLazuliOre;
                 }
-                else if (f0 > v2+3)
+                else if (f0 < v2)
                 {
                     objToMake = BlockData.BlockType.goldOre;
                 }
-                else if (f1 >v0)
+                else if (f1 < v0)
                 {
                     objToMake = BlockData.BlockType.redstoneOre;
                 }
-                else if (f2 > v1)
+                else if (f1 < v1)
                 {
                     objToMake = BlockData.BlockType.tinOre;
                 }
-                else if (f3 > v2)
+                else if (f1 < v2)
                 {
                     objToMake = BlockData.BlockType.ironOre;
                 }
-                else if (f3 > v0+25)
+                else if (f2 < v0)
                 {
                     objToMake = BlockData.BlockType.coalOre;
                 }
