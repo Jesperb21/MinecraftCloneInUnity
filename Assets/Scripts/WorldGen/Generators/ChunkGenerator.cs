@@ -50,7 +50,7 @@ public class ChunkGenerator : MonoBehaviour {
     public void init(int chunkSize, int actualChunkX, int actualChunkZ, bool generateColumnsPerFrame = false)
     {
         tallestPoint = 0;
-        solid = new BlockData(BlockData.BlockType.stone, new Vector3());
+        solid = new BlockData(BlockData.BlockType.stone, new Vector3(),20);
 
         this.chunkSize = chunkSize;
         actualChunkCoords = new ChunkPos(actualChunkX, actualChunkZ);
@@ -73,7 +73,7 @@ public class ChunkGenerator : MonoBehaviour {
                 {
                     for (int z = 0; z < chunkSize; z++)
                     {
-                        Blocks[x, y, z] = new BlockData(BlockData.BlockType.air, new Vector3((actualChunkX + x), y, (actualChunkZ + z)));
+                        Blocks[x, y, z] = new BlockData(BlockData.BlockType.air, new Vector3((actualChunkX + x), y, (actualChunkZ + z)),20);
                     }
                 }
             }
@@ -129,8 +129,8 @@ public class ChunkGenerator : MonoBehaviour {
                 //make a new thread to calculate StoneHeightBorder...
                 //Thread t = new Thread(() =>
                 //{
-                    stoneHeightBorder = SimplexNoise(_X, 0, _Z, 0.05f, 4, 0) -24;//controls "hills" in the stone
-                    stoneHeightBorder += SimplexNoise(_X, 0, _Z, 0.008f, 48, 0) +48; // controls the main levels of stone
+                    stoneHeightBorder = SimplexNoise(_X, 0, _Z, 0.05f, 4, 0) -24;//base layer of stone
+                    stoneHeightBorder += SimplexNoise(_X, 0, _Z, 0.008f, 48, 0) +48; // stone mountains
 
                 //});
                 //t.Start();
@@ -161,7 +161,10 @@ public class ChunkGenerator : MonoBehaviour {
                 if (stoneHeightBorder + dirtHeightBorder + 1 > tallestPoint)
                     tallestPoint = stoneHeightBorder + dirtHeightBorder + 1;
 
-                CalculateChunkColumn(stoneHeightBorder, dirtHeightBorder, (x + actualChunkX), (z + actualChunkZ));
+                int temp = 60-(dirtHeightBorder+stoneHeightBorder);
+                //temp -= 15;
+                //Debug.LogError(temp);
+                CalculateChunkColumn(stoneHeightBorder, dirtHeightBorder, (x + actualChunkX), (z + actualChunkZ), temp);
 
             }
 
@@ -187,7 +190,7 @@ public class ChunkGenerator : MonoBehaviour {
     /// <param name="dirtHeightBorder">how high to place dirt</param>
     /// <param name="x">x position of the column</param>
     /// <param name="z">z position of the column</param>
-    private void CalculateChunkColumn(int stoneHeightBorder, int dirtHeightBorder, int x, int z)
+    private void CalculateChunkColumn(int stoneHeightBorder, int dirtHeightBorder, int x, int z, int temp)
     {
         /*Thread th = new Thread(() =>
             {*/
@@ -266,7 +269,7 @@ public class ChunkGenerator : MonoBehaviour {
 
             int _x = Mathf.Abs(x % chunkSize);
             int _z = Mathf.Abs(z % chunkSize);
-            Blocks[_x, y, _z] = new BlockData(objToMake, new Vector3(x, y, z));
+            Blocks[_x, y, _z] = new BlockData(objToMake, new Vector3(x, y, z), temp);
             y--;
 
         }

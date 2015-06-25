@@ -23,6 +23,7 @@ public class BlockData
         }
     };
     public coordinates position;
+    public int Temperature;
     
     public enum BlockType
     {
@@ -34,12 +35,13 @@ public class BlockData
     public struct Tile { public int x; public int y;}
     const float tileSize = 0.25f; //space between tiles. eg 1 (picture) /4(pictures adjacent) = 0.25f per picture
 
-    public BlockData(BlockType type, Vector3 pos)
+    public BlockData(BlockType type, Vector3 pos, int temp)
     {
         this.type = type;
         position.x = pos.x;
         position.y = pos.y;
         position.z = pos.z;
+        Temperature = temp;
     }
     public BlockData()
     {
@@ -147,13 +149,28 @@ public class BlockData
                 switch (direction)
                 {
                     case Direction.up:
-                        tile.x = 2;
+                        if (Temperature < 0)
+                        {
+                            tile.y = 1;
+                        }
+                        else
+                        {
+                            tile.x = 2;
+                        }
                         break;
                     case Direction.down:
                         tile.x = 1;
                         break;
                     default:
-                        tile.x = 3;
+                        if (Temperature < 0)
+                        {
+                            tile.x = 1;
+                            tile.y = 1;
+                        }
+                        else
+                        {
+                            tile.x = 3;
+                        }
                         break;
                 }
                 break;
