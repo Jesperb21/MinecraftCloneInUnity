@@ -4,14 +4,14 @@ using System.Collections;
 public class InventoryScript : MonoBehaviour {
 
     public GameObject inventory;
-    public bool isPaused;
+    public bool isPaused2;
 
     GameObject player;
 
 
 	// Use this for initialization
 	void Start () {
-        inventory.SetActive(true);
+        inventory.SetActive(false);
 	}
 	
 	// Update is called once per frame
@@ -20,7 +20,7 @@ public class InventoryScript : MonoBehaviour {
 
         player = GameObject.FindWithTag("Player");
 
-        if (isPaused)
+        if (isPaused2)
         {
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
@@ -38,7 +38,7 @@ public class InventoryScript : MonoBehaviour {
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            isPaused = !isPaused;
+            isPaused2 = !isPaused2;
         }
 	}
 }

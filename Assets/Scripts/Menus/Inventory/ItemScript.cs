@@ -33,5 +33,6 @@ public class ItemScript {
 
    public ItemScript()
    {
+       itemID = -1;
    }
 }
