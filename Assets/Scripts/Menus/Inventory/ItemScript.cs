@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+//The item is serialized
+//because we want to be able to se all item variabels and interact through the inspector
 [System.Serializable]
+//The class does not inherit from monodevelop, because we want it to inherit from Object
 public class ItemScript {
 
     public string itemName;
@@ -19,7 +22,7 @@ public class ItemScript {
    }
 
 
-    //dette er en cunstructor
+    //a constuctor overloaded
    public ItemScript(string name, int id, string desc, int power, int speed, ItemType type)
    {
        itemName = name;
@@ -31,6 +34,7 @@ public class ItemScript {
        itemType = type;
    }
 
+    //a constructor
    public ItemScript()
    {
        itemID = -1;

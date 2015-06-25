@@ -4,6 +4,8 @@ using System.Collections;
 
 public class InGameMenuScript : MonoBehaviour {
 
+    //public variables
+    //here we set the scene names in the inspector insted og hardcoding it.
     public string mainMenu;
     public string restart;
 
@@ -33,22 +35,28 @@ public class InGameMenuScript : MonoBehaviour {
 
         if (isPaused)
         {
+            //We want to be able to se and move our mouse in the menu.
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
+            //show ingamemenu
             pauseMenuCanvas.SetActive(true);
+            //disable Player scripts for better menu interaction
             player.transform.GetComponent<MovementController>().enabled = false;
             player.transform.GetComponent<CameraController>().enabled = false;
 
         }
         else
         {
+            //diable the ingamemenu
             pauseMenuCanvas.SetActive(false);
+            //inable Player scripts
             player.transform.GetComponent<MovementController>().enabled = true;
             player.transform.GetComponent<CameraController>().enabled = true;
         }
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            //toggle paused and not paused 
             isPaused = !isPaused;
         }
 	}

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class InventoryListScript : MonoBehaviour {
 
-
+    //public variabels
     public int slotsX, slotsY;
     public GUISkin skin;
     public List<ItemScript> inventory = new List<ItemScript>();
@@ -85,15 +85,17 @@ public class InventoryListScript : MonoBehaviour {
             if (draggingItem)
             {
 
-                GUI.DrawTexture(new Rect(Event.current.mousePosition.x -30f, Event.current.mousePosition.y, 50, 50),draggedItem.itemIcon); 
+                GUI.DrawTexture(new Rect(Event.current.mousePosition.x -30f, Event.current.mousePosition.y, 50, 50),draggedItem.itemIcon);
             }
 
-           /* if (GUI.Button(new Rect(40, 250, 100, 40), "Save"))
+            #region save/loade
+            /* if (GUI.Button(new Rect(40, 250, 100, 40), "Save"))
                 SaveInventory();
             if (GUI.Button(new Rect(40, 300, 100, 40), "Load"))
             {
                 LoadInventory();
             }*/
+            #endregion
         }
         
     }
@@ -111,30 +113,30 @@ public class InventoryListScript : MonoBehaviour {
                 Rect slotRect = new Rect(x*40, y * 40,30,30);
                 GUI.Box(new Rect(slotRect), "", skin.GetStyle("Slots"));
                 item = inventory[i];
+
                 if (item.itemName != null)
                 {
-                    //this is the rectanguel i whant to use
+                    //this is the rectangule i whant to use
                     GUI.DrawTexture(slotRect, item.itemIcon);
-                    //with in this inventory rectangle, the mouse position layes. We can now se if the mouse is howering over this slot
+                    // if with in this inventory rectangule, the mouse position layes. We can now se if the mouse is hovering over this slot
                     if (slotRect.Contains(e.mousePosition))
                     {
-                    
-                       //toolTip = CreateToolTip(slots[i]);
-                        //showToolTip = true;
-                        //if left mousebutton pressed pickup item
+      
+                        //if left mousebutton pressed pick up item => Move Item
                         if (e.isMouse && e.button == 0 && e.type == EventType.mouseDrag && !draggingItem)
                         {
                             draggingItem = true;
-                            //we set the index number from the index we are dragging
+                            //we set the index number to the item.index we are dragging
                             draggingIndex = i;
                             //set the item to the item in that slot
                             draggedItem = item;
+                            //set slot to empty item
                             inventory[i] = new ItemScript();
                         }
                         //swap items
                         if (e.isMouse && e.type == EventType.mouseUp && draggingItem)
                         {
-                            //swap items, make the item in the slot go to the possition of the dragged item origan.
+                            //Move the originat item of the new slot to the postition of the dragged items origan.
                             inventory[draggingIndex] = inventory[i];
                             //set the dragged item to be the new item in the new slot
                             inventory[i] = draggedItem;
@@ -149,16 +151,16 @@ public class InventoryListScript : MonoBehaviour {
                             toolTip = CreateToolTip(inventory[i]);
                             showToolTip = true;
                         }
+                        //Hover over slot and click right mousebutton to eat the item.
                         if (e.isMouse && e.type == EventType.mouseDown && e.button == 1)
                         {
+                            //if the item is consumable :-P
                             if (item.itemType == ItemScript.ItemType.Consumable)
                             {
-                               // print("use food");
                                 UseFood(slots[i],i,true);
                             }
                         }
                     }
-
                     if (toolTip == "")
                     {
                         showToolTip = false;
@@ -219,6 +221,7 @@ public class InventoryListScript : MonoBehaviour {
 
     void RemoveItem(int id)
     {
+        //find all slots
         for (int i = 0; i < inventory.Count; i++)
         {
             //if we find the item with that id
@@ -245,6 +248,7 @@ public class InventoryListScript : MonoBehaviour {
         }
         if (deleteItem)
         {
+            //replase item in slot with empty item
             inventory[slot] = new ItemScript();
         }
     }
@@ -253,10 +257,10 @@ public class InventoryListScript : MonoBehaviour {
     bool InventoryContains(int id)
     {
         bool result = false;
-        //looper igennem vores hvor mange inventar slots vi har
+        //find all slots
         for (int i = 0; i < inventory.Count; i++)
         {
-            //we whant to se if this item exists
+            //we want to see if this item exists
             result = inventory[i].itemID == id;
             //If I find the a item with id
             if (result)
