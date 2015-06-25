@@ -27,7 +27,6 @@ public class InGameMenuScript : MonoBehaviour {
         isPaused = false;
     }
 	
-	// Update is called once per frame
 	void Update () {
 
         player = GameObject.FindWithTag("Player");
@@ -35,6 +34,7 @@ public class InGameMenuScript : MonoBehaviour {
         if (isPaused)
         {
             Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
             pauseMenuCanvas.SetActive(true);
             player.transform.GetComponent<MovementController>().enabled = false;
             player.transform.GetComponent<CameraController>().enabled = false;

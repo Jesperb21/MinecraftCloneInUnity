@@ -35,18 +35,11 @@ public class InventoryListScript : MonoBehaviour {
             //add blank item to every slot on the list
             inventory.Add(new ItemScript());
         }
-
-        
-        //inventory[0] = database.items[0];
+   
         AddItem(0);
         AddItem(0);
         AddItem(1);
-       // AddItem(1);
-       // RemoveItem(0);
-       // print(InventoryContains(1));
-        //inventory.Add(database.items[0]);
-        //inventory.Add(database.items[1]);
-
+        AddItem(1);
 	}
 
     void Update()
@@ -54,7 +47,10 @@ public class InventoryListScript : MonoBehaviour {
 
         player = GameObject.FindWithTag("Player");
 
-
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            isPaused = !isPaused;
+        }
         if (isPaused)
         {
             Cursor.visible = true;
@@ -70,19 +66,13 @@ public class InventoryListScript : MonoBehaviour {
             player.transform.GetComponent<MovementController>().enabled = true;
             player.transform.GetComponent<CameraController>().enabled = true;
         }
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            isPaused = !isPaused;
-            //showinventory = !showinventory;
-        }
     }
 
     void OnGUI()
     {
-        
-        
         toolTip = "";
         GUI.skin = skin;
+
         if (showinventory)
         {
             DrawInventory();
@@ -113,6 +103,7 @@ public class InventoryListScript : MonoBehaviour {
         Event e = Event.current;
         int i = 0;
         ItemScript item = slots[i];
+
         for (int y = 0; y < slotsY; y++)
         {
             for (int x = 0; x < slotsX; x++)
