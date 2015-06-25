@@ -1,15 +1,33 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 //note, this doesn't extend MonoBehaviour, thats on purpose, it doesn't need it
+[Serializable]//serializable so it can be serialized into a file
 public class BlockData
 {
     public BlockType type;
-    public Vector3 position;
+
+    //vector 3 surrogate, vector 3 wasn't serializable, so couldn't be saved
+    [Serializable]
+    public struct coordinates
+    {
+        public float x; 
+        public float y; 
+        public float z;
+
+        public coordinates(float x, float y, float z){
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    };
+    public coordinates position;
+    public int Temperature;
     
     public enum BlockType
     {
-        air, grass, stone, dirt, emeraldOre
+        air, stone, dirt, grass, coalOre, lapisLazuliOre, emeraldOre, goldOre, redstoneOre, ironOre, tinOre
     }
     public enum Direction { north, east, south, west, up, down };
     
@@ -17,16 +35,24 @@ public class BlockData
     public struct Tile { public int x; public int y;}
     const float tileSize = 0.25f; //space between tiles. eg 1 (picture) /4(pictures adjacent) = 0.25f per picture
 
-    public BlockData(BlockType type, Vector3 pos)
+    public BlockData(BlockType type, Vector3 pos, int temp)
     {
         this.type = type;
-        position = pos;
+        position.x = pos.x;
+        position.y = pos.y;
+        position.z = pos.z;
+        Temperature = temp;
+    }
+    public BlockData()
+    {
+        type = BlockType.air;
     }
 
     public virtual bool IsSolid(Direction direction)
     {
         if (type != BlockType.air)
         {
+            /*
             switch (direction)
             {
                 case Direction.north:
@@ -41,7 +67,8 @@ public class BlockData
                     return true;
                 case Direction.down:
                     return true;
-            }
+            }*/
+            return true;
         }
         return false;
     }
@@ -122,15 +149,52 @@ public class BlockData
                 switch (direction)
                 {
                     case Direction.up:
-                        tile.x = 2;
+                        if (Temperature < 0)
+                        {
+                            tile.y = 1;
+                        }
+                        else
+                        {
+                            tile.x = 2;
+                        }
                         break;
                     case Direction.down:
                         tile.x = 1;
                         break;
                     default:
-                        tile.x = 3;
+                        if (Temperature < 0)
+                        {
+                            tile.x = 1;
+                            tile.y = 1;
+                        }
+                        else
+                        {
+                            tile.x = 3;
+                        }
                         break;
                 }
+                break;
+            case BlockType.coalOre:
+                tile.y = 3;
+                break;
+            case BlockType.lapisLazuliOre:
+                tile.y = 3;
+                tile.x = 1;
+                break;
+            case BlockType.goldOre:
+                tile.y = 3;
+                tile.x = 3;
+                break;
+            case BlockType.redstoneOre:
+                tile.y = 2;
+                break;
+            case BlockType.tinOre:
+                tile.x = 1;
+                tile.y = 2;
+                break;
+            case BlockType.ironOre:
+                tile.x = 2;
+                tile.y = 2;
                 break;
         } 
         
@@ -139,6 +203,7 @@ public class BlockData
 
     protected virtual MeshData FaceDataUp(ChunkGenerator chunk, int x, int y, int z, MeshData meshData)
     {
+
         meshData.AddVertex(new Vector3(x - 0.5f, y + 0.5f, z + 0.5f));
         meshData.AddVertex(new Vector3(x + 0.5f, y + 0.5f, z + 0.5f));
         meshData.AddVertex(new Vector3(x + 0.5f, y + 0.5f, z - 0.5f));

@@ -45,9 +45,14 @@ public class WorldGenerator : MonoBehaviour
     void Start()
     {
 
+        Profiler.maxNumberOfSamplesPerFrame = 1000000;
         if (transform.Find("Player"))
         {
             player = transform.Find("Player").gameObject;
+            
+            player.transform.position = new Vector3(
+                    UnityEngine.Random.Range(100,5000), player.transform.position.y, UnityEngine.Random.Range(100,5000)                
+                );
         }
         else
         {
@@ -99,7 +104,7 @@ public class WorldGenerator : MonoBehaviour
         }
         else
         {
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(2f);
         }
         updatingWorld = false;
     }
@@ -121,6 +126,7 @@ public class WorldGenerator : MonoBehaviour
         //and every 4th time ( thisloop/2 ) knows its made another layer
         //this results in something like http://gyazo.com/c8daf4c2a000e11d4ac004e00d9ad21b ... hopefully
         //gif from before fuckup #86 http://gyazo.com/1d8ffa8b586a99576c44f41491146eee
+        int maxInARow = 5;
         for (int thisLoop = 0; (thisLoop/2) <= radiusToGenerateAroundPlayer; )
         {
 
@@ -131,15 +137,16 @@ public class WorldGenerator : MonoBehaviour
                 //wait while it finishes generating chunks
                 while(generatingChunk)
                 {
-                    yield return new WaitForEndOfFrame();
+                    yield return new WaitForSeconds(2f);
                 }
                 ChunkPos pos = new ChunkPos((int)loopPos.x, (int)loopPos.y);
+
                 if (loadedUp)// load the world up before rendering
                     CreateChunkAndRender(pos);
                 else
                     CreateChunk(pos);
 
-                    yield return new WaitForEndOfFrame();
+                    //yield return new WaitForEndOfFrame();
                 
 
                 
@@ -162,10 +169,15 @@ public class WorldGenerator : MonoBehaviour
                         loopPos.y++;
                         break;
                 }
-                yield return new WaitForEndOfFrame();
+                if (maxInARow <= 0)
+                {
+                    yield return new WaitForSeconds(0.3f);
+                    maxInARow = 2;
+                }
+                maxInARow--;
             }
 
-            yield return new WaitForEndOfFrame();
+            yield return new WaitForSeconds(0.5f);
 
             //add another iteration to this loop every 2nd time it runs through
             if (addAnotherIteration)
@@ -192,6 +204,7 @@ public class WorldGenerator : MonoBehaviour
 
         loadedUp = true;
         generatingWorld = false;
+        spiralsInProgress--;
     }
 
     /// <summary>
@@ -202,6 +215,7 @@ public class WorldGenerator : MonoBehaviour
     {
         CreateChunk(pos);
         StartCoroutine(RenderChunk(pos));
+        
     }
 
 
@@ -212,6 +226,7 @@ public class WorldGenerator : MonoBehaviour
     /// <param name="pos">position of the chunk</param>
     public void CreateChunk(ChunkPos pos)
     {
+        generatingChunk = true;
         ChunkGenerator chunkGen = null;
 
         chunkDictionary.TryGetValue(pos, out chunkGen);
@@ -236,6 +251,8 @@ public class WorldGenerator : MonoBehaviour
             chunkObj.name = "chunk_x" + pos.x + "_z" + pos.z; // set the name property to know where it is in the world through the inspector
 //            Debug.Log("derped out around here, name:" + chunkObj.name);
         }
+
+        generatingChunk = false;
     }
 
     /// <summary>
@@ -246,6 +263,7 @@ public class WorldGenerator : MonoBehaviour
     /// <param name="pos">position of the chunk</param>
     public IEnumerator RenderChunk(ChunkPos pos)
     {
+        generatingChunk = true;
         ChunkGenerator chunk = null;
         chunkDictionary.TryGetValue(pos, out chunk);
 
@@ -268,11 +286,13 @@ public class WorldGenerator : MonoBehaviour
         {
             //make a new thread for each chunk needed to be generated
             CreateChunk(posToGen);
+            yield return new WaitForSeconds(0.1f);
         }
 
 
-        yield return new WaitForSeconds(0.5f); //wait a short while 
+        yield return new WaitForSeconds(0.05f); //wait a short while 
         chunk.Render();
+        generatingChunk = false;
     }
 
     //should probably remake this function to use the dictionary instead, but it works for now
